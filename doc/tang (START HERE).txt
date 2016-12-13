@@ -1,0 +1,645 @@
+
+TODO: "to" keyword, casts address by default, or converts if >Type is used.
+
+
+
+hello_world.tang
+---------------------------------------------------
+library "tang/cmd" to CMD
+
+func run()
+    CMD::print("Hello world!")
+--------------------------------------------------
+
+$tang --lib-include tang/tang.h --in hello_world.tang --out tang_out.c
+$cc -o hello_world.exe tang_out.c
+$./hello_world.exe
+Hello world!
+
+
+
+
+
+fizzbuzz.tang
+-----------------------------------------------------
+library "tang/cmd" to CMD
+
+func run()
+    for i from 1 up to 21
+        else if (i % 3) == 0
+            if (i % 5) == 0
+                CMD::print("fizzbuzz")
+            else
+                CMD::print("fizz")
+        else if (i % 5) == 0
+            CMD::print("buzz")
+        else
+            CMD::print(i)
+-----------------------------------------------------
+$tang --lib-include tang/tang.h --in fizzbuzz.tang --out tang_out.c
+$cc -o fizzbuzz.exe tang_out.c
+$./fizzbuzz.exe
+1
+2
+fizz
+4
+buzz
+fizz
+7
+8
+fizz
+buzz
+11
+fizz
+13
+14
+fizzbuzz
+16
+17
+fizz
+19
+buzz
+
+
+
+
+hello_pointers.tang
+----------------------------------------------------
+library "tang/string" to S
+
+func run()
+    /* ">Type inst_name" creates an instance
+       
+       "Type ptr_name" creates a pointer
+       
+       Both are variables.
+       
+       Each variable has a value and an address, but the pointer's
+       address can be changed to "point at" the address of another variable.
+       
+       The <- operator refers explicitly to the address of a variable.
+       
+       "p -> i" is sugar for "p<- = i" 
+       
+       := creates an instance with a type matching the entity 
+       on the right side and assigns the value to it.
+       
+       :> creates a pointer with a type matching the entity
+       on the right side and assigns the address to it
+       
+       "a;;f(b)" is mostly sugar for "f(a, b).  (Actually, it's a
+       little more complicated than that under the hood, but we'll
+       get to that.) */
+    
+    >Int32 a = 5, b = 3
+    >S::String8 str
+    str;;copy("a and b: ");;append(a);;append(" ");;append(b);;newline();;print()
+    
+    c := a + b
+    str;;copy("c := a + b: ");;append(c);;newline();;print()
+    
+    Int32 d -> c
+    str;;copy("d -> c: ");;append(d);;newline();;print()
+    
+    c += 2
+    str;;copy("d affected through c: ");;append(d);;newline();;print()
+    
+    d -> a
+    str;;copy("d -> a: ");;append(d);;newline();;print()
+    
+    e :> b
+    str;;copy("e :> b");;append(e);;newline();;print()
+    
+    e += 2
+    str;;copy("b affected through e");;append(b);;newline();;print()
+    
+    str;;copy("b<-: ");;append(b<-);;newline();;print()
+    str;;copy("e<-: ");;append(e<-);;newline();;print()
+------------------------------------------------------
+
+$tang --lib-include tang/tang.h --in hello_pointers.tang --out tang_out.c
+$cc -o hello_pointers.exe tang_out.c
+$./hello_pointers.exe
+a and b: 5 3
+c := a + b: 8
+d -> c: 8
+d affected through c: 10
+d -> a: 5
+e :> b: 3
+b affected through e: 5
+b<-: [ADDRESS]
+e<-: [SAME ADDRESS]
+
+
+
+
+
+
+hello_forms.tang
+--------------------------------------------------------
+library "tang/string" to S
+
+form Game_Character
+    >Int32 hit_points = 30, attack_level = 10
+
+func attack(Game_Character attacker, defender)
+    defender.hit_points -= attacker.attack_level
+    >S::String8 msg
+    msg;;copy("attack, enemy hp: ");;append(defender.hit_points);;newline()
+    msg;;print()
+
+func run()
+    >Game_Character knight = [50, 15], goblin
+    goblin;;attack(knight)
+    knight;;attack(goblin)
+    
+    goblin;;construct()
+    /* construct is an auto-generated function which
+       resets all of the fields of a form. */
+    
+    goblin;;destruct()
+    /* destruct is an auto-generated function which
+       does nothing.  It's here for compatability with classes. */
+    
+    goblin;;copy(Game_Character[25, 7])
+    /* copy is an auto-generated function which copies the given input.
+       You can create an unnamed instance of a form by giving its name.
+       You can set its contents manually with square brackets. */
+    
+    goblin;;take(knight)
+    /* take is an auto-generated function which in the case of a form
+       behaves just like copy.  It's here for compatability with classes. */
+    
+    /* construct, destruct, copy, and take all cannot be supplimented
+       or overridden in the case of a form (see below) */
+--------------------------------------------------------
+
+$tang --lib-include tang/tang.h --in hello_forms.tang --out tang_out.c
+$cc -o hello_forms.exe tang_out.c
+$./hello_forms.exe
+attack, enemy hp 40
+attack, enemy hp 15
+
+
+TODO: difference between class and form
+
+TOOD: alias
+
+
+
+hello_arrays.tang
+------------------------------------------------------------
+library "tang/cmd" to CMD
+
+func run()
+    []Int32 a = [1, 1, 2, 3, 5, 8, 13, 21]
+    for i from 0 up to a.length
+        CMD::print(a[i])
+-------------------------------------------------------------
+$tang --lib-include tang/tang.h --in hello_arrays.tang --out tang_out.c
+$cc -o hello_arrays.exe tang_out.c
+$./hello_arrays.exe
+1
+1
+2
+3
+5
+8
+13
+21
+
+
+
+
+
+hello_heap.tang
+----------------------------------------------------------
+library "tang/standard_allocator" to STDA
+library "tang/cmd" to CMD
+
+/* you can create your own allocators.
+
+   An allocator is a group containing these functions:
+   
+   func alloc(>Size size) -> Unknown
+   func realloc(Unknown pointer, >Size size) -> Unknown
+   func free(Unknown pointer)
+   
+   If the pointer passed to realloc points NOWHERE, realloc
+   should behave like alloc.
+   
+   If the pointer passed to free points NOWHERE, it should do nothing. */
+
+func run()
+    const LENGTH = 8
+    Int32 h -> STDA::alloc(size_of(Int32)*(LENGTH as Size))
+    for i from 0 up to LENGTH
+        h[i] = i*i
+    for i from LENGTH down to 0
+        CMD::print(h[i])
+    STDA::free(h)
+-----------------------------------------------------------
+$tang --lib-include tang/tang.h --in hello_heap.tang --out tang_out.c
+$cc -o hello_heap.exe tang_out.c
+$./hello_heap.exe
+49
+36
+25
+16
+9
+4
+1
+0
+
+
+
+TODO: redo this example
+
+hello_class.tang
+--------------------------------------------------------------
+library "tang/standard_allocator" to STDA
+library "tang/cmd" to CMD
+
+class Five_Ints
+    Int32 v
+
+func construct(Five_Ints fi) -> Five_Ints
+    fi.v -> STDA::alloc(size_of(Int32)*5 as Size)
+    return fi
+
+func alloc(Five_Ints fi) -> Int32
+    return fi.v ->
+
+func copy(Five_Ints dest, src) -> Five_Ints
+    for i from 0 up to 5
+        dest.v[i] = src.v[i]
+    return dest
+
+func take(
+
+
+
+
+
+
+NOTE: distinction between print() and cmd_out()
+
+NOTE: + - * / & | ^ % && || all will produce a temp variable which 
+      can't be pointed to
+
+NOTE: to compare one pointer to another, use "is" keyword, or "is not"
+
+NOTE: multiple indirection isn't possible
+
+KEYWORDS: for i from j up to k
+          for i from j down to k
+          for i in iterable
+
+NOTE: Iterator{?Iterable} should be built in
+
+NOTE: for forms, construct(), destruct(), copy(), and take() are autogenned,
+      destruct() isn't automatically called when a sheet leaves scope, and
+      the null autogenned construct(), destruct(), copy() and take() can't 
+      be overridden or supplemented.  For classes, construct() and destruct() 
+      are autogenned, copy() and take() are not, but can be manually written, 
+      and the autogenned construct() and destruct() can be supplimented.
+
+NOTE: order of operations: 1) . ;; <- as ::
+                           2) everything else
+                           3) = := -> :>
+
+PASSES: comment removal pass
+        block and statement pass
+        asynchronous pass
+        synchronous pass
+        output pass
+
+
+FUNDAMENTAL TYPES: Int8
+                   Int16
+                   Int32
+                   Int64
+                   Uint8
+                   Uint16
+                   Uint32
+                   Uint64
+                   Unit8
+                   Unit16
+                   Unit32
+                   Float32
+                   Float64
+
+NOTE: String_Literal{?Unit} is a separate built-in type,
+      similar to arrays (only its elements can't be edited)
+
+
+
+ENDIAN INDICATORS: LE
+                   BE
+
+The endianness of a fundamental type can be specified by 
+passing the special determinate LE or BE to the type:
+
+>Int32{BE} big_endian
+>Float32{LE} little_endian
+
+A fundamentally-typed variable that has had its endianness specified
+cannot partake in any operations other than being assigned to or assigned
+from.
+
+
+
+PUNCTUATION: =
+             ->
+             :=
+             :>
+             <-
+             .
+             ,
+             ::
+             ;;
+             ==
+             !=
+             !
+             <
+             >
+             <=
+             >=
+             &&
+             ||
+             ?
+             :
+             +
+             -
+             /
+             *
+             &
+             ^
+             %
+             +=
+             -=
+             /=
+             *=
+             &=
+             ^=
+             %=
+             <<
+             >>
+             <<=
+             >>=
+
+ENCLOSERS: ()
+           []
+           {}
+
+STRING AND CHARACTER LITERALS:
+
+A character literal is a unicode character or escaped character
+enclosed in single-quotes.
+
+A string literal is unicode characters and escaped characters
+enclosed in double-quotes.  A sequence of several string literals in a row
+gets concatenated into one string literal.
+
+
+
+
+AUTOGENNED: construct()
+            destruct()
+            copy() (not for classes)
+            take() (not for classes)
+
+
+
+BUILTINS: to{?Out}(? in)
+          Iterator{?}
+          greater_than(>? a, b)
+          less_than(>? a, b)
+
+
+NOTES ABOUT <-: this operator is used to refer specifically to the address
+                of the variable instead of the value.
+                This has three applications:
+                  1) to specify that you want to pass a fundamental-typed 
+                     variable by reference instead of by value.
+                     If there are two functions available, one of which
+                     accepts a fundamental instance and the other of
+                     which accepts a fundamental pointer, the version
+                     which accepts an instance will be preferred over the 
+                     version which accepts a pointer, unless you use <- to 
+                     specify that you want to pass the address instead of 
+                     the value.
+                  2) to be a condition.  When used as a condition, a
+                     variable's value is generally what's used.  If you
+                     use a variable's address as a condition, NOWHERE will
+                     be interpreted as false, and anything else will be 
+                     interpreted as true.
+                  3) to perform operations on an address.  For example:
+                     (a<- + 5 as Size) will be an address 5 bytes after the
+                     address of a.  This also works with -, +=, and -=, and
+                     it is useful when used in conjunction with offset_of.
+
+
+
+
+MODULES:
+
+TODO
+
+
+
+
+GROUPS:
+
+A group consists of either a reference to another module or a map of names.
+If a module is imported to a group, then anything that was or is put into 
+that group becomes an addon to that module instead.
+
+Only one module is allowed per group.
+
+
+
+
+ADDONS:
+
+Each synonym has a block ID number indicating which block it's
+from, and each block has a map of IDs of imported blocks which 
+can be queried to test whether the synonym in question is imported.
+
+When you add a synonym to a group to which a module has been imported,
+that synonym becomes an "addon" to that imported module, and is only visible
+in a block to which both the module that creates the addon and the module
+that has been added onto have been imported.
+
+
+
+
+
+Consider this project:
+
+thing.tang
+----------------------------------------
+class Thing{?}
+    >Int32 v
+func thang{?}() -> >Int32
+    return 5
+func get(Thing{?} thing) -> >Int32
+    return thing.v
+---------------------------------------
+
+thing_addon.tang
+---------------------------------------
+class T::Thing{Float32}
+    >Float32 v
+func T::thang{Float32} -> >Float32
+    return 5.5
+func T::get(T::Thing{Float32} thing) -> >Float32
+    return thing.v
+
+module "thing" to T
+
+/* note that even though "thing" was imported AFTER the addon,
+   the addon still applies to what was defined in "thing"
+--------------------------------------
+
+use_thing.tang
+--------------------------------------
+module "thing" to T
+func use_thing() -> >Int32
+    T::Thing{Float32} thing
+    thing.v = T::thang{Float32}()
+    return thing;;get()
+--------------------------------------
+
+use_thing_addon.tang
+--------------------------------------
+module "thing" to T
+module "thing_addon" to A
+/* note that even though "thing_addon" is
+   imported to a different group than "thing",
+   "thing_addon"'s addon to Thing
+   still applied to Thing as accessed from group T */
+func use_thing_addon() -> >Float32
+    Thing{Float32} thing
+    thing.v = thang{Float32}()
+    return thing;;get()
+---------------------------------------
+
+bring_it_together.tang
+--------------------------------------
+module "use_thing" to T
+module "use_thing_addon" to S
+func run()
+    >Int32 i = T::use_thing()
+    >Float f = S::use_thing_addon()
+--------------------------------------
+
+
+
+
+TEMPLATES VS INSTANCES:
+
+When writing tang code, one is actually writing /templates/ for
+types and functions.  Instances of types and functions are /generated/
+from these templates.
+
+
+
+INDETERMINATES AND DETERMINATES:
+
+A type or function template may have a list of indeterminates (an
+"indeterminate-list," similar to a function's parameter list).  When a
+function or type template is invoked, each indeterminate is filled by
+a "determinate".  For each unique combination of determinates
+with which the template is invoked, an instance is generated.
+
+A determinate must be something that can be known at compile time: a type,
+a function, a group, a literal, a constant, or an endian-indicator.
+In other words, either a literal, endian-indicator or an 
+asynchronous name.  See below.
+
+
+
+PARTS:
+
+Each word, punctuation mark, string literal, or character literal is a "part."
+A "part" is literally some text in the code.  It is important
+for us to distinguish between the parts themselves and the
+meanings that the parts convey.
+
+
+
+EXPRESSIONS:
+
+Parts get interpreted into expressions.  There are many types of expressions;
+depending on the type, an expression may consist of a name with 
+indeterminate-list, or a literal value, or it may have any number of inputs 
+which are themselves expressions.  An expression yields one output, 
+which is of one entity type (note that the entity type will vary 
+depending on the function instance, so it can't be determined until
+the synchronous pass).
+
+
+TODO: types of expression
+
+
+
+TYPES:
+
+There are three kinds of types: type template, 
+                                type instance, 
+                                entity type.
+
+A type template is what the source code directly describes.  The template
+may have a list of indeterminates.  For each unique combination of determinates
+with which the type template is invoked, a type instance will be generated.
+
+An entity type may be a type instance, or it may be an array type of known
+or unkown length, in which case it will contain a pointer to another
+entity type, that of the objects in the array (which itself may be 
+another array type, though this one must be of known length).
+
+An entity type also has flags indicating:
+ - whether or not the address is accessible
+ - whether or not the value is accessible
+ - whether or not the address is mutable
+ - whether or not the value is mutable
+ - whether or not the entity is indexable[]
+ - whether the entity can be passed or returned by value
+ - whether this entity is a c value or a c pointer under the hood
+ - whether this entity is specified little endian
+ - whether this entity is specified big endian
+ - whether or not the address is emphasized.
+
+Note that the <- operator technically just sets the "address is emphasized"
+flag to "true."
+
+
+
+
+TODO: how to access array length?  Perhaps that's its own expression?
+
+
+
+ENTITIES:
+
+An entity is what's outputted by an expression.  It's important to note
+that an entity isn't something that persistently exists in the compiler's
+model of the code, it's something ephemeral that can flit in and out of
+existence during an expression.
+
+An entity can be a c value or it can be a c pointer under the hood.
+
+
+TODO: unnamed instances of classes or forms?
+
+
+
+SYNCHRONOUS AND ASYNCHRONOUS:
+
+TODO
+
+
+TODO: Entry_Point
+
+
