@@ -5,18 +5,45 @@
 #include <cstdio>
 #include <cstring>
 #include <cerrno>
+#include <vector>
+#include "tang_file_writer.hpp"
+
+#ifdef _WIN32
+#include "ix_unicode.hpp"
+
+#define GET_ARGV       &(argv[0])
+
+int wmain(int argc, wchar_t **argvw)
+{
+    std::vector<std::string> argv_strings;
+    std::vector<char*> argv;
+    
+    argv_strings.resize(argc);
+    argv.resize(argc);
+    
+    for(int i = 0; i < argc; i++)
+    {
+        std::string &arg = argv_strings[i];
+        const wchar_t *argw = argvw[i];
+        int argw_length = (int)wcslen(argw);
+        int arg_length = ix_measure_utf16_to_utf8(argw, argw_length);
+        arg.resize(arg_length);
+        char *argp = &(arg[0]);
+        ix_convert_utf16_to_utf8(argp, argw, argw_length);
+        argv[i] = argp;
+    }
+
+#else
+
+#define GET_ARGV        argv
 
 int main(int argc, char **argv)
 {
+#endif
     // TODO: check for --help or -h
     Tang_Argument_Parser arg_parser;
-    if(!arg_parser.parse(argc, argv))
+    if(!arg_parser.parse(argc, GET_ARGV))
     {
-        return -1;
-    }
-    if(arg_parser.out_path.empty())
-    {
-        std::cout << "Output path not provided" << std::endl;
         return -1;
     }
     // TODO: temporarily limiting to one input file
@@ -35,21 +62,22 @@ int main(int argc, char **argv)
     }
     // TODO: I'm eventually going to need to keep track of module locations.
     //       This is a shortcut for now.
-    Tang_File_Reader reader;
-    if(!reader.open(arg_parser.in_paths[0].c_str()))
-    {
-        return -1;
-    }
     Tang_Text_Without_Comments text;
-    text.from(reader);
-    FILE *f = fopen(arg_parser.out_path.c_str(), "w");
-    if(!f)
     {
-        std::cout << "Failed to open file \"" << arg_parser.out_path.c_str();
-        std::cout << "\" with error \"" << std::strerror(errno) << "\"\n";
-        return -1;
+        Tang_File_Reader reader;
+        if(!reader.open(arg_parser.in_paths[0].c_str()))
+        {
+            return -1;
+        }
+        text.from(reader);
     }
-    fwrite(text.text.data(), sizeof(char), text.text.length(), f);
-    fclose(f);
+    {
+        Tang_File_Writer writer;
+        if(!writer.open(arg_parser.out_path.c_str()))
+        {
+            return -1;
+        }
+        writer.write(text.text);
+    }
     return 0;
 }

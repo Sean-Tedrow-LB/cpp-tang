@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <map>
-#include "tang_name.cpp"
+#include "tang_name.hpp"
 
 struct Tang_Statement_Data
 {
@@ -11,6 +11,7 @@ struct Tang_Statement_Data
     int length, line_number;
 };
 
+struct Tang_Block;
 
 union Tang_Child_Data
 {
@@ -28,15 +29,19 @@ struct Tang_Block_Child
 {
     Tang_Block_Child_Type type;
     Tang_Child_Data data;
+    
+    ~Tang_Block_Child();
 };
 
 struct Tang_Block
 {
     std::vector<Tang_Block_Child> children;
-    std::map<std::string, Tang_Name_Base*> name_map;
+    std::map<std::string, Tang_Name_Base> name_map;
+    Tang_Block *parent;
     int indentation;
+    // TODO: more stuff
     
-    ~Tang_Block(); // TODO: iterate over and delete names
+    ~Tang_Block();
 };
 
 #endif

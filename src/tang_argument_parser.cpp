@@ -169,5 +169,10 @@ bool Tang_Argument_Parser::parse(int argc, char **argv)
             }
         }
     }
+    if(out_path.empty())
+    {
+        std::cout << "Output path not provided" << std::endl;
+        successful = false;
+    }
     return successful;
 }

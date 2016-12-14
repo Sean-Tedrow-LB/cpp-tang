@@ -2,7 +2,7 @@
 #define __TANG_FILE_READER__
 
 #include <string>
-#include <cstdio>
+
 
 struct Tang_File_Reader
 {

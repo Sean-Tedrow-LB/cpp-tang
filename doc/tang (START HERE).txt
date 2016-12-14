@@ -3,7 +3,7 @@ TODO: "to" keyword, casts address by default, or converts if >Type is used.
 
 
 
-hello_world.tang
+hello-world.tang
 ---------------------------------------------------
 library "tang/cmd" to CMD
 
@@ -11,9 +11,9 @@ func run()
     CMD::print("Hello world!")
 --------------------------------------------------
 
-$tang --lib-include tang/tang.h --in hello_world.tang --out tang_out.c
-$cc -o hello_world.exe tang_out.c
-$./hello_world.exe
+$tang --lib-include tang/tang.h --in hello-world.tang --out tang-out.c
+$cc -o hello-world.exe tang-out.c
+$./hello-world.exe
 Hello world!
 
 
@@ -36,8 +36,8 @@ func run()
         else
             CMD::print(i)
 -----------------------------------------------------
-$tang --lib-include tang/tang.h --in fizzbuzz.tang --out tang_out.c
-$cc -o fizzbuzz.exe tang_out.c
+$tang --lib-include tang/tang.h --in fizzbuzz.tang --out tang-out.c
+$cc -o fizzbuzz.exe tang-out.c
 $./fizzbuzz.exe
 1
 2
@@ -63,14 +63,14 @@ buzz
 
 
 
-hello_pointers.tang
+hello-pointers.tang
 ----------------------------------------------------
 library "tang/string" to S
 
 func run()
-    /* ">Type inst_name" creates an instance
+    /* ">Type inst-name" creates an instance
        
-       "Type ptr_name" creates a pointer
+       "Type ptr-name" creates a pointer
        
        Both are variables.
        
@@ -117,9 +117,9 @@ func run()
     str;;copy("e<-: ");;append(e<-);;newline();;print()
 ------------------------------------------------------
 
-$tang --lib-include tang/tang.h --in hello_pointers.tang --out tang_out.c
-$cc -o hello_pointers.exe tang_out.c
-$./hello_pointers.exe
+$tang --lib-include tang/tang.h --in hello-pointers.tang --out tang-out.c
+$cc -o hello-pointers.exe tang-out.c
+$./hello-pointers.exe
 a and b: 5 3
 c := a + b: 8
 d -> c: 8
@@ -135,21 +135,21 @@ e<-: [SAME ADDRESS]
 
 
 
-hello_forms.tang
+hello-forms.tang
 --------------------------------------------------------
 library "tang/string" to S
 
-form Game_Character
-    >Int32 hit_points = 30, attack_level = 10
+form Game-Character
+    >Int32 hit-points = 30, attack-level = 10
 
-func attack(Game_Character attacker, defender)
-    defender.hit_points -= attacker.attack_level
+func attack(Game-Character attacker, defender)
+    defender.hit-points -= attacker.attack-level
     >S::String8 msg
-    msg;;copy("attack, enemy hp: ");;append(defender.hit_points);;newline()
+    msg;;copy("attack, enemy hp: ");;append(defender.hit-points);;newline()
     msg;;print()
 
 func run()
-    >Game_Character knight = [50, 15], goblin
+    >Game-Character knight = [50, 15], goblin
     goblin;;attack(knight)
     knight;;attack(goblin)
     
@@ -161,7 +161,7 @@ func run()
     /* destruct is an auto-generated function which
        does nothing.  It's here for compatability with classes. */
     
-    goblin;;copy(Game_Character[25, 7])
+    goblin;;copy(Game-Character[25, 7])
     /* copy is an auto-generated function which copies the given input.
        You can create an unnamed instance of a form by giving its name.
        You can set its contents manually with square brackets. */
@@ -174,9 +174,9 @@ func run()
        or overridden in the case of a form (see below) */
 --------------------------------------------------------
 
-$tang --lib-include tang/tang.h --in hello_forms.tang --out tang_out.c
-$cc -o hello_forms.exe tang_out.c
-$./hello_forms.exe
+$tang --lib-include tang/tang.h --in hello-forms.tang --out tang-out.c
+$cc -o hello-forms.exe tang-out.c
+$./hello-forms.exe
 attack, enemy hp 40
 attack, enemy hp 15
 
@@ -187,7 +187,7 @@ TOOD: alias
 
 
 
-hello_arrays.tang
+hello-arrays.tang
 ------------------------------------------------------------
 library "tang/cmd" to CMD
 
@@ -196,9 +196,9 @@ func run()
     for i from 0 up to a.length
         CMD::print(a[i])
 -------------------------------------------------------------
-$tang --lib-include tang/tang.h --in hello_arrays.tang --out tang_out.c
-$cc -o hello_arrays.exe tang_out.c
-$./hello_arrays.exe
+$tang --lib-include tang/tang.h --in hello-arrays.tang --out tang-out.c
+$cc -o hello-arrays.exe tang-out.c
+$./hello-arrays.exe
 1
 1
 2
@@ -212,9 +212,9 @@ $./hello_arrays.exe
 
 
 
-hello_heap.tang
+hello-heap.tang
 ----------------------------------------------------------
-library "tang/standard_allocator" to STDA
+library "tang/standard-allocator" to STDA
 library "tang/cmd" to CMD
 
 /* you can create your own allocators.
@@ -232,16 +232,16 @@ library "tang/cmd" to CMD
 
 func run()
     const LENGTH = 8
-    Int32 h -> STDA::alloc(size_of(Int32)*(LENGTH as Size))
+    Int32 h -> STDA::alloc(size-of(Int32)*(LENGTH as Size))
     for i from 0 up to LENGTH
         h[i] = i*i
     for i from LENGTH down to 0
         CMD::print(h[i])
     STDA::free(h)
 -----------------------------------------------------------
-$tang --lib-include tang/tang.h --in hello_heap.tang --out tang_out.c
-$cc -o hello_heap.exe tang_out.c
-$./hello_heap.exe
+$tang --lib-include tang/tang.h --in hello-heap.tang --out tang-out.c
+$cc -o hello-heap.exe tang-out.c
+$./hello-heap.exe
 49
 36
 25
@@ -255,22 +255,22 @@ $./hello_heap.exe
 
 TODO: redo this example
 
-hello_class.tang
+hello-class.tang
 --------------------------------------------------------------
-library "tang/standard_allocator" to STDA
+library "tang/standard-allocator" to STDA
 library "tang/cmd" to CMD
 
-class Five_Ints
+class Five-Ints
     Int32 v
 
-func construct(Five_Ints fi) -> Five_Ints
-    fi.v -> STDA::alloc(size_of(Int32)*5 as Size)
+func construct(Five-Ints fi) -> Five-Ints
+    fi.v -> STDA::alloc(size-of(Int32)*5 as Size)
     return fi
 
-func alloc(Five_Ints fi) -> Int32
+func alloc(Five-Ints fi) -> Int32
     return fi.v ->
 
-func copy(Five_Ints dest, src) -> Five_Ints
+func copy(Five-Ints dest, src) -> Five-Ints
     for i from 0 up to 5
         dest.v[i] = src.v[i]
     return dest
@@ -282,7 +282,7 @@ func take(
 
 
 
-NOTE: distinction between print() and cmd_out()
+NOTE: distinction between print() and cmd-out()
 
 NOTE: + - * / & | ^ % && || all will produce a temp variable which 
       can't be pointed to
@@ -323,13 +323,10 @@ FUNDAMENTAL TYPES: Int8
                    Uint16
                    Uint32
                    Uint64
-                   Unit8
-                   Unit16
-                   Unit32
                    Float32
                    Float64
 
-NOTE: String_Literal{?Unit} is a separate built-in type,
+NOTE: String-Literal{?Unit} is a separate built-in type,
       similar to arrays (only its elements can't be edited)
 
 
@@ -340,8 +337,8 @@ ENDIAN INDICATORS: LE
 The endianness of a fundamental type can be specified by 
 passing the special determinate LE or BE to the type:
 
->Int32{BE} big_endian
->Float32{LE} little_endian
+>Int32{BE} big-endian
+>Float32{LE} little-endian
 
 A fundamentally-typed variable that has had its endianness specified
 cannot partake in any operations other than being assigned to or assigned
@@ -413,8 +410,8 @@ AUTOGENNED: construct()
 
 BUILTINS: to{?Out}(? in)
           Iterator{?}
-          greater_than(>? a, b)
-          less_than(>? a, b)
+          greater-than(>? a, b)
+          less-than(>? a, b)
 
 
 NOTES ABOUT <-: this operator is used to refer specifically to the address
@@ -437,7 +434,7 @@ NOTES ABOUT <-: this operator is used to refer specifically to the address
                   3) to perform operations on an address.  For example:
                      (a<- + 5 as Size) will be an address 5 bytes after the
                      address of a.  This also works with -, +=, and -=, and
-                     it is useful when used in conjunction with offset_of.
+                     it is useful when used in conjunction with offset-of.
 
 
 
@@ -487,7 +484,7 @@ func get(Thing{?} thing) -> >Int32
     return thing.v
 ---------------------------------------
 
-thing_addon.tang
+thing-addon.tang
 ---------------------------------------
 class T::Thing{Float32}
     >Float32 v
@@ -502,36 +499,36 @@ module "thing" to T
    the addon still applies to what was defined in "thing"
 --------------------------------------
 
-use_thing.tang
+use-thing.tang
 --------------------------------------
 module "thing" to T
-func use_thing() -> >Int32
+func use-thing() -> >Int32
     T::Thing{Float32} thing
     thing.v = T::thang{Float32}()
     return thing;;get()
 --------------------------------------
 
-use_thing_addon.tang
+use-thing-addon.tang
 --------------------------------------
 module "thing" to T
-module "thing_addon" to A
-/* note that even though "thing_addon" is
+module "thing-addon" to A
+/* note that even though "thing-addon" is
    imported to a different group than "thing",
-   "thing_addon"'s addon to Thing
+   "thing-addon"'s addon to Thing
    still applied to Thing as accessed from group T */
-func use_thing_addon() -> >Float32
+func use-thing-addon() -> >Float32
     Thing{Float32} thing
     thing.v = thang{Float32}()
     return thing;;get()
 ---------------------------------------
 
-bring_it_together.tang
+bring-it-together.tang
 --------------------------------------
-module "use_thing" to T
-module "use_thing_addon" to S
+module "use-thing" to T
+module "use-thing-addon" to S
 func run()
-    >Int32 i = T::use_thing()
-    >Float f = S::use_thing_addon()
+    >Int32 i = T::use-thing()
+    >Float f = S::use-thing-addon()
 --------------------------------------
 
 
@@ -640,6 +637,52 @@ SYNCHRONOUS AND ASYNCHRONOUS:
 TODO
 
 
-TODO: Entry_Point
+TODO: Entry-Point
 
 
+
+
+ERRORS:
+
+During the course of a function, you may use:
+
+set-error value
+
+Where value is an expression of the type Int32.
+
+This keyword will have one of these effects, depending on whether
+the caller uses check-error:
+
+if check-error isn't used, it will be equivalent to an assert, and will crash
+the program, unless the compiler flag --optimistic is given, in which case
+nothing will happen.
+
+If check-error is employed by the statement immediately after the statement
+where the function was called, then the function finishes running, and
+the check-error block will handle the error.  However, this will only work
+if set-error sets the error to an integer other than 0.
+
+in use, the check-error keyword looks like this:
+
+func-call()
+check-error error-val
+    /* do something with error-val */
+
+If the function in question is a part of a statement with many function
+calls in it, then after the call where set-error is reached, any of the 
+other calls in that statement are skipped.
+
+Errors work under the hood by implementing two versions of each
+function, one for when errors are checked, and another for when they
+aren't.
+
+The error-checked version of a function will take as its first argument
+a pointer to an error integer.  The integer will be initialized to 0
+before any calls, and will be checked after each call in the statement.
+
+
+
+
+RETURNING ARRAYS:
+
+TODO

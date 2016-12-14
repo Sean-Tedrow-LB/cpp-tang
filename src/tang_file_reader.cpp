@@ -19,13 +19,34 @@ Tang_File_Reader::~Tang_File_Reader()
     }
 }
 
+#ifdef _WIN32
+#include "ix_unicode.hpp"
+
+
+inline std::FILE* do_fopen(const char *path)
+{
+    int length = (int)strlen(path);
+    std::u16string wpath;
+    int wlength = ix_measure_utf8_to_utf16(path, length);
+    wpath.resize(wlength);
+    char16_t *wstr = &(wpath[0]);
+    ix_convert_utf8_to_utf16(wstr, path, length);
+    return _wfopen((wchar_t*)wstr, L"r");
+}
+
+#else
+
+#define do_fopen(path)    fopen(path, "r")
+
+#endif
+
 bool Tang_File_Reader::open(const char *path)
 {
     if(file)
     {
         fclose(file);
     }
-    file = fopen(path, "r");
+    file = do_fopen(path);
     if(!file)
     {
         std::cout << "Failed to open file \"" << path;
@@ -49,7 +70,7 @@ bool Tang_File_Reader::next()
     {
         text_buffer.resize(TANG_READ_BUFFER_SIZE);
         text_buffer.resize(fread(&(text_buffer[0]), sizeof(char), 
-                             (size_t)TANG_READ_BUFFER_SIZE, file));
+                           (size_t)TANG_READ_BUFFER_SIZE, file));
         buffer_progress = 0;
     }
     return buffer_progress < (int)text_buffer.length();

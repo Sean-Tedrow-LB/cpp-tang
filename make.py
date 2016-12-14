@@ -6,6 +6,9 @@ source_files = [
     "tang_argument_parser.cpp",
     "tang_comment_removal.cpp",
     "tang_file_reader.cpp",
+    "tang_file_writer.cpp",
+    "ix_unicode.cpp",
+    "tang_modules.cpp"
 ]
 
 
@@ -87,7 +90,7 @@ def compile_for_linux(files, debug, additional_flags, out_path):
 
 debug = False
 if len(sys.argv) > 1:
-    debug = (sys.argv[1] == debug)
+    debug = (sys.argv[1] == "debug")
 additional_flags = []
 if debug:
     additional_flags = sys.argv[2:]
