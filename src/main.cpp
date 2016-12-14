@@ -8,6 +8,10 @@
 #include <vector>
 #include "tang_file_writer.hpp"
 
+
+// TODO: make writer and reader take std::string for open()
+
+
 #ifdef _WIN32
 #include "ix_unicode.hpp"
 
@@ -26,10 +30,10 @@ int wmain(int argc, wchar_t **argvw)
         std::string &arg = argv_strings[i];
         const wchar_t *argw = argvw[i];
         int argw_length = (int)wcslen(argw);
-        int arg_length = ix_measure_utf16_to_utf8(argw, argw_length);
+        int arg_length = ix_measure_utf16_to_utf8((const char16_t*)argw, argw_length);
         arg.resize(arg_length);
         char *argp = &(arg[0]);
-        ix_convert_utf16_to_utf8(argp, argw, argw_length);
+        ix_convert_utf16_to_utf8(argp, (const char16_t*)argw, argw_length);
         argv[i] = argp;
     }
 

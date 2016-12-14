@@ -34,6 +34,7 @@ linux_libs = [
 windows_flags = [
     "/D", "_UNICODE",
     "/D", "UNICODE",
+    "/EHsc"
 ]
 
 windows_libs = [
@@ -69,9 +70,9 @@ def compile_for_windows(files, debug, additional_flags, out_path):
     else:
         additional_flags += ["/MT"]
         defines += ["/DNDEBUG"]
-    command = ["cl"] + defines + ["/I", "windows_include", "/Fo" + "windows_object_files\\"] + \
+    command = ["cl"] + defines + ["/I", "windows_include", "/Fo" + "obj\\"] + \
                windows_flags + additional_flags + paths + windows_libs + \
-               ["/Fe" + out_path, "/link", "/LIBPATH:windows_libraries", "/SUBSYSTEM:WINDOWS"]
+               ["/Fe" + out_path, "/link", "/SUBSYSTEM:CONSOLE"]
     print("\n\n\n", command, "\n\n\n", sep="", end="")
     subprocess.call(command)
 

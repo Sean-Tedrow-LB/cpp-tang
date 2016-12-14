@@ -7,6 +7,7 @@
 
 #include <Windows.h>
 #include <cstring>
+#include "ix_unicode.hpp"
 
 inline bool env_to_string(const char *env_name, std::string &string_out)
 {
