@@ -7,6 +7,7 @@
 #include <cerrno>
 #include <vector>
 #include "tang_file_writer.hpp"
+#include "tang_modules.hpp"
 
 
 // TODO: make writer and reader take std::string for open()
@@ -50,38 +51,39 @@ int main(int argc, char **argv)
     {
         return -1;
     }
-    // TODO: temporarily limiting to one input file
-    if(arg_parser.in_paths.size() != 1)
-    {
-        std::cout << "In this early build of the compiler," 
-                     " precisely one input file must be provided" << std::endl;
-        return -1;
-    }
     if(arg_parser.mode != TANG_MODE_TEXT_WITHOUT_COMMENTS)
     {
         std::cout << "In this early build of the compiler,"
-                     " the output mode must be set to " <<
+                     " the output mode must be set to "
                      TANG_FLAG_MODE_TEXT_WITHOUT_COMMENTS << std::endl;
         return -1;
     }
-    // TODO: I'm eventually going to need to keep track of module locations.
-    //       This is a shortcut for now.
-    Tang_Text_Without_Comments text;
+    
+    // TODO use Tang_Module_Tracker
+    
+    Tang_Module_Tracker module_tracker;
+    if(!module_tracker.initialize())
     {
-        Tang_File_Reader reader;
-        if(!reader.open(arg_parser.in_paths[0].c_str()))
-        {
-            return -1;
-        }
-        text.from(reader);
+        return -1;
     }
+    for(int i = 0; i < (int)arg_parser.in_paths.size(); i++)
     {
-        Tang_File_Writer writer;
-        if(!writer.open(arg_parser.out_path.c_str()))
-        {
-            return -1;
-        }
-        writer.write(text.text);
+        const std::string &in_path = arg_parser.in_paths[i];
+        module_tracker.load_module_from_working_dir(in_path);
+    }
+    Tang_File_Writer writer;
+    if(!writer.open(arg_parser.out_path))
+    {
+        return -1;
+    }
+    std::string header;
+    for(int i = 0; i < (int)module_tracker.modules.size(); i++)
+    {
+        Tang_Module_Node *module = module_tracker.modules[i];
+        header = std::string("\n\n\n***** FOLLOWING IS TEXT OF MODULE \"") + 
+                                              module->name + "\" *****\n\n\n";
+        writer.write(header);
+        writer.write(module->text.text);
     }
     return 0;
 }

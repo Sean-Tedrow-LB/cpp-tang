@@ -13,7 +13,7 @@ struct Tang_File_Writer
     Tang_File_Writer();
     ~Tang_File_Writer();
     
-    bool open(const char *path);
+    bool open(const std::string &path);
     void write(const std::string &input);
 };
 

@@ -68,7 +68,7 @@ def compile_for_windows(files, debug, additional_flags, out_path):
     if debug:
         additional_flags += ["/MTd"]
     else:
-        additional_flags += ["/MT"]
+        additional_flags += ["/MT", "/O2"]
         defines += ["/DNDEBUG"]
     command = ["cl"] + defines + ["/I", "windows_include", "/Fo" + "obj\\"] + \
                windows_flags + additional_flags + paths + windows_libs + \
@@ -83,6 +83,7 @@ def compile_for_linux(files, debug, additional_flags, out_path):
         additional_flags += ["-g"]
     else:
         defines += ["-D", "NDEBUG"]
+        additional_flags += ["-O3", "-s"]
     command = ["g++"] + linux_flags + additional_flags + defines + \
                     paths + linux_libs + ["-o", out_path]
     print("\n\n\n", command, "\n\n\n", sep="", end="")

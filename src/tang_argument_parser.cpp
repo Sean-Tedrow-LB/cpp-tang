@@ -53,7 +53,7 @@ static bool set_out(const char *value, Tang_Argument_Parser &parser)
     }
     else
     {
-        std::cout << "The " << TANG_FLAG_OUT << " flag can only be given once" << std::endl;
+        std::cout << "The " TANG_FLAG_OUT " flag can only be given once" << std::endl;
     }
     return result;
 }

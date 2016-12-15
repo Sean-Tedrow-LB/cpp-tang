@@ -14,7 +14,7 @@ struct Tang_File_Reader
     Tang_File_Reader();
     ~Tang_File_Reader();
     
-    bool open(const char *path);
+    bool open(const std::string &path);
     char get() const;
     bool next();
 };

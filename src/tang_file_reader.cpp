@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cerrno>
 #include <cstring>
+#include "ix_unicode.hpp"
 
 #define TANG_READ_BUFFER_SIZE 16000
 
@@ -20,7 +21,6 @@ Tang_File_Reader::~Tang_File_Reader()
 }
 
 #ifdef _WIN32
-#include "ix_unicode.hpp"
 
 
 inline std::FILE* do_fopen(const char *path)
@@ -40,13 +40,25 @@ inline std::FILE* do_fopen(const char *path)
 
 #endif
 
-bool Tang_File_Reader::open(const char *path)
+static bool check_for_bom(const char *to_check)
+{
+    for(int i = 0; i < IX_UTF8_BOM_SIZE; i++)
+    {
+        if(to_check[i] != IX_UTF8_BOM[i])
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool Tang_File_Reader::open(const std::string &path)
 {
     if(file)
     {
         fclose(file);
     }
-    file = do_fopen(path);
+    file = do_fopen(path.c_str());
     if(!file)
     {
         std::cout << "Failed to open file \"" << path;
@@ -57,6 +69,13 @@ bool Tang_File_Reader::open(const char *path)
     text_buffer.resize(fread(&(text_buffer[0]), sizeof(char), 
                              (size_t)TANG_READ_BUFFER_SIZE, file));
     buffer_progress = 0;
+    if(text_buffer.length() >= 3)
+    {
+        if(check_for_bom(text_buffer.data()))
+        {
+            buffer_progress = IX_UTF8_BOM_SIZE;
+        }
+    }
     return true;
 }
 char Tang_File_Reader::get() const

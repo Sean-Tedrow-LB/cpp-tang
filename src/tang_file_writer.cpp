@@ -42,14 +42,14 @@ static std::FILE* do_fopen(const char *path)
 #endif
 
 
-bool Tang_File_Writer::open(const char *path)
+bool Tang_File_Writer::open(const std::string &path)
 {
     if(file)
     {
         fwrite(text_buffer.data(), sizeof(char), text_buffer.length(), file);
         fclose(file);
     }
-    file = do_fopen(path);
+    file = do_fopen(path.c_str());
     if(!file)
     {
         std::cout << "Failed to open file \"" << path;
