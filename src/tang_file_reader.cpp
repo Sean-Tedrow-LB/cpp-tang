@@ -23,9 +23,8 @@ Tang_File_Reader::~Tang_File_Reader()
 #ifdef _WIN32
 
 
-inline std::FILE* do_fopen(const char *path)
+inline std::FILE* do_fopen(const char *path, int length)
 {
-    int length = (int)strlen(path);
     std::u16string wpath;
     int wlength = ix_measure_utf8_to_utf16(path, length);
     wpath.resize(wlength);
@@ -36,7 +35,7 @@ inline std::FILE* do_fopen(const char *path)
 
 #else
 
-#define do_fopen(path)    fopen(path, "r")
+#define do_fopen(path, length)    fopen(path, "r")
 
 #endif
 
@@ -58,7 +57,7 @@ bool Tang_File_Reader::open(const std::string &path)
     {
         fclose(file);
     }
-    file = do_fopen(path.c_str());
+    file = do_fopen(path.c_str(), path.length());
     if(!file)
     {
         std::cout << "Failed to open file \"" << path;

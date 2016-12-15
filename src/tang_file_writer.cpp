@@ -24,9 +24,8 @@ Tang_File_Writer::~Tang_File_Writer()
 #include "ix_unicode.hpp"
 
 
-static std::FILE* do_fopen(const char *path)
+static std::FILE* do_fopen(const char *path, int length)
 {
-    int length = (int)strlen(path);
     std::u16string wpath;
     int wlength = ix_measure_utf8_to_utf16(path, length);
     wpath.resize(wlength);
@@ -37,7 +36,7 @@ static std::FILE* do_fopen(const char *path)
 
 #else
 
-#define do_fopen(path)    fopen(path, "w")
+#define do_fopen(path, length)    fopen(path, "w")
 
 #endif
 
@@ -49,7 +48,7 @@ bool Tang_File_Writer::open(const std::string &path)
         fwrite(text_buffer.data(), sizeof(char), text_buffer.length(), file);
         fclose(file);
     }
-    file = do_fopen(path.c_str());
+    file = do_fopen(path.c_str(), path.length());
     if(!file)
     {
         std::cout << "Failed to open file \"" << path;
