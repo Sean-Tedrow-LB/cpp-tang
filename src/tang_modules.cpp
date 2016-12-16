@@ -1,6 +1,6 @@
 #include "tang_modules.hpp"
 #include <iostream>
-
+#include <cstring>
 
 
 
@@ -18,12 +18,18 @@ static bool env_to_string(const char *env_name, std::string &string_out)
     int wenv_name_length = ix_measure_utf8_to_utf16(env_name, env_name_length);
     wenv_name.resize(wenv_name_length);
     ix_convert_utf8_to_utf16(&(wenv_name[0]), env_name, env_name_length);
-    DWORD wout_length = UINT_MAX;
-    for(DWORD sz = 256; sz < wout_length; sz *= 2)
+    wout.resize(255);
+    DWORD wout_length = GetEnvironmentVariable((const wchar_t*)wenv_name.c_str(),
+                                               (wchar_t*)&(wout[0]), 256);
+    if(wout_length == 0)
     {
-        wout.resize(sz - 1);
+        return false;
+    }
+    if(wout_length > 256)
+    {
+        wout.resize(wout_length - 1);
         wout_length = GetEnvironmentVariable((const wchar_t*)wenv_name.c_str(),
-                                             (wchar_t*)&(wout[0]), sz);
+                                             (wchar_t*)&(wout[0]), wout_length);
         if(wout_length == 0)
         {
             return false;
@@ -66,13 +72,12 @@ static std::string get_working_directory()
 
 
 #define PATH_DELIMITER '\\'
-#define DEFAULT_TANG_LIBRARY_PATH   "/usr/tang-libraries"
+#define DEFAULT_TANG_LIBRARY_PATH   "C:\\Program Files\\Tang\\tang-libraries"
 
 #else
 
 #include <unistd.h>
 #include <cstdlib>
-#include <cstring>
 #include <cerrno>
 
 static bool env_to_string(const char *env_name, std::string &string_out)
@@ -210,7 +215,6 @@ bool Tang_Module_Tracker::initialize()
         std::cout << "No TANG_LIBRARY_PATH environment variable found, "
                      "defaulting to \"" << DEFAULT_TANG_LIBRARY_PATH <<
                      "\"" << std::endl;
-        
         lib_path = DEFAULT_TANG_LIBRARY_PATH;
     }
     std::string wd_path = get_working_directory();
