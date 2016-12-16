@@ -21,8 +21,8 @@ struct Tang_Module_Node
         delete root_block;
     }
     
-    std::string do_get_path() const;
-    std::string get_path() const;
+    std::string get_dir_path() const;
+    std::string get_module_path() const;
 };
 
 struct Tang_Module_Tracker
@@ -39,8 +39,7 @@ struct Tang_Module_Tracker
     
     bool initialize();
     
-    template <char DELIMITER>
-    Tang_Module_Node* get_module_from_module(const char *path,
+    Tang_Module_Node* get_module_from_module(const char *path, char delimiter,
                                              Tang_Module_Node *current_node,
                                              bool &is_new_out);
     

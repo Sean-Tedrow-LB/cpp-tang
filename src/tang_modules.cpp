@@ -8,7 +8,6 @@
 
 #include <Windows.h>
 #include "ix_unicode.hpp"
-#include <climits>
 #include "windows_error.hpp"
 
 static bool env_to_string(const char *env_name, std::string &string_out)
@@ -40,10 +39,6 @@ static bool env_to_string(const char *env_name, std::string &string_out)
     ix_convert_utf16_to_utf8(&(string_out[0]), wout.c_str(), wout_length);
     return true;
 }
-
-
-// TODO: errno doesn't work here, need to use GetLastError.  I think I can
-//       cannibalize something from interxect.
 
 static std::string get_working_directory()
 {
@@ -115,11 +110,11 @@ static std::string get_working_directory()
 
 #endif
 
-std::string Tang_Module_Node::do_get_path() const
+std::string Tang_Module_Node::get_dir_path() const
 {
     if(parent)
     {
-        return parent->do_get_path() + PATH_DELIMITER + name;
+        return parent->get_dir_path() + PATH_DELIMITER + name;
     }
     else
     {
@@ -127,28 +122,20 @@ std::string Tang_Module_Node::do_get_path() const
     }
 }
 
-std::string Tang_Module_Node::get_path() const
+std::string Tang_Module_Node::get_module_path() const
 {
-    if(parent)
-    {
-        return parent->do_get_path() + PATH_DELIMITER + name + ".tang";
-    }
-    else
-    {
-        return name + ".tang";
-    }
+    return get_dir_path() + ".tang";
 }
 
 
 // NOTE: returns true when you've reached the end of the path
-template <char DELIMITER>
-bool get_step(const char *path, std::string &out)
+bool get_step(const char *path, char delimiter, std::string &out)
 {
     for(int i = 0;; i++)
     {
         char c = path[i];
         bool reached_end = !c;
-        if(c == DELIMITER || reached_end)
+        if(c == delimiter || reached_end)
         {
             out.resize(i);
             for(int j = 0; j < i; j++)
@@ -160,9 +147,9 @@ bool get_step(const char *path, std::string &out)
     }
 }
 
-template <char DELIMITER>
+
 Tang_Module_Node* 
-Tang_Module_Tracker::get_module_from_module(const char *p,
+Tang_Module_Tracker::get_module_from_module(const char *p, char delimiter,
                                             Tang_Module_Node *current_node,
                                             bool &is_new_out)
 {
@@ -172,7 +159,7 @@ Tang_Module_Tracker::get_module_from_module(const char *p,
     bool end_reached = false;
     do
     {
-        end_reached = get_step<DELIMITER>(p, step);
+        end_reached = get_step(p, delimiter, step);
         p += step.length() + 1;
         if(step == "..")
         {
@@ -207,14 +194,13 @@ Tang_Module_Tracker::get_module_from_module(const char *p,
 
 bool Tang_Module_Tracker::initialize()
 {
-    // TODO: CLEAN THIS FUNCTION THE FUCK UP.
     std::string lib_path;
     bool lib_path_found = env_to_string("TANG_LIBRARY_PATH", lib_path);
     if(!lib_path_found)
     {
         std::cout << "No TANG_LIBRARY_PATH environment variable found, "
-                     "defaulting to \"" << DEFAULT_TANG_LIBRARY_PATH <<
-                     "\"" << std::endl;
+                     "defaulting to \"" DEFAULT_TANG_LIBRARY_PATH  "\"" 
+                     << std::endl;
         lib_path = DEFAULT_TANG_LIBRARY_PATH;
     }
     std::string wd_path = get_working_directory();
@@ -222,88 +208,107 @@ bool Tang_Module_Tracker::initialize()
     {
         return false;
     }
-    bool is_new;
+    bool is_new_throwaway, wd_path_just_root;
+    
+    const char *wd_path_p;
+    
+    
 #ifdef _WIN32
-    std::string lib_step, wd_step;
-    const char *lib_path_p = &(lib_path[0]);
-    const char *wd_path_p = &(wd_path[0]);
-    bool lib_path_just_root = get_step<PATH_DELIMITER>(lib_path_p, lib_step);
-    bool wd_path_just_root = get_step<PATH_DELIMITER>(wd_path_p, wd_step);
-    lib_path_p += lib_step.length() + 1;
-    wd_path_p += wd_step.length() + 1;
-    root.name = wd_step;
-    if(lib_step != wd_step)
     {
-        library_root_needed = true;
-        library_root.name = lib_step;
-        if(!lib_path_just_root)
+        std::string lib_step, wd_step;
+        lib_path_p = &(lib_path[0]);
+        const char *wd_path_p = &(wd_path[0]);
+        bool lib_path_just_root = get_step<PATH_DELIMITER>(lib_path_p, lib_step);
+        wd_path_just_root = get_step<PATH_DELIMITER>(wd_path_p, wd_step);
+        lib_path_p += lib_step.length() + 1;
+        wd_path_p += wd_step.length() + 1;
+        root.name = wd_step;
+        if(lib_step != wd_step)
         {
-            library_directory_node = get_module_from_module<PATH_DELIMITER>(lib_path_p, 
-                                                                            &library_root, 
-                                                                            is_new);
+            library_root_needed = true;
+            library_root.name = lib_step;
+            if(lib_path_just_root)
+            {
+                library_directory_node = &library_root;
+            }
+            else
+            {
+                library_directory_node = get_module_from_module(lib_path_p, 
+                                                                PATH_DELIMITER 
+                                                                &library_root, 
+                                                                is_new_throwaway);
+            }
         }
         else
         {
-            library_directory_node = &library_root;
+            if(lib_path_just_root)
+            {
+                library_directory_node = &root;
+            }
+            else
+            {
+                library_directory_node = get_module_from_module(lib_path_p, 
+                                                                PATH_DELIMITER,
+                                                                &root, 
+                                                                is_new_throwaway);
+            }
         }
     }
-    else
+    
+    
+    
+#else
+
+
     {
-        if(!lib_path_just_root)
+        bool lib_path_from_root = lib_path[0] == '/';
+        bool wd_path_from_root = wd_path[0] == '/';
+        if(!lib_path_from_root || !wd_path_from_root)
         {
-            library_directory_node = get_module_from_module<PATH_DELIMITER>(lib_path_p, 
-                                                                            &root, 
-                                                                            is_new);
+            if(!lib_path_from_root)
+            {
+                std::cout << "Given library path \"" << lib_path
+                          << "\" is not from root (it should be)" << std::endl;
+            }
+            if(!wd_path_from_root)
+            {
+                std::cout << "Given working directory path \"" << lib_path
+                          << "\" is not from root (it should be)" << std::endl;
+            }
+            return false;
         }
-        else
+        bool lib_path_just_root = lib_path.length() == 1;
+        wd_path_just_root = wd_path.length() == 1;
+        
+        const char *lib_path_p = &(lib_path[1]);
+        wd_path_p = &(wd_path[1]);
+        if(lib_path_just_root)
         {
             library_directory_node = &root;
         }
-    }
-#else
-    bool lib_path_from_root = lib_path[0] == '/';
-    bool wd_path_from_root = wd_path[0] == '/';
-    if(!lib_path_from_root || !wd_path_from_root)
-    {
-        if(!lib_path_from_root)
+        else
         {
-            std::cout << "Given library path, \"" << lib_path
-                      << "\" is not from root (it should be)" << std::endl;
+            library_directory_node = get_module_from_module(lib_path_p,
+                                                            PATH_DELIMITER, 
+                                                            &root, 
+                                                            is_new_throwaway);
         }
-        if(!wd_path_from_root)
-        {
-            std::cout << "Given working directory path, \"" << lib_path
-                      << "\" is not from root (it should be)" << std::endl;
-        }
-        return false;
-    }
-    bool lib_path_just_root = lib_path.length() == 1;
-    bool wd_path_just_root = wd_path.length() == 1;
-    
-    const char *lib_path_p = &(lib_path[1]);
-    const char *wd_path_p = &(wd_path[1]);
-    if(!lib_path_just_root)
-    {
-        library_directory_node = get_module_from_module<PATH_DELIMITER>(lib_path_p, 
-                                                                        &root, 
-                                                                        is_new);
-    }
-    else
-    {
-        library_directory_node = &root;
     }
 #endif
-    if(!wd_path_just_root)
-    {
-        working_directory_node = get_module_from_module<PATH_DELIMITER>(wd_path_p, 
-                                                                        &root, 
-                                                                        is_new);
-    }
-    else
+
+
+
+    if(wd_path_just_root)
     {
         working_directory_node = &root;
     }
-    (void)is_new;
+    else
+    {
+        working_directory_node = get_module_from_module(wd_path_p, 
+                                                        PATH_DELIMITER,
+                                                        &root, 
+                                                        is_new_throwaway);
+    }
     return true;
 }
 
@@ -333,13 +338,12 @@ Tang_Module_Tracker::load_module_from_module(const std::string &path,
         return nullptr;
     }
     bool is_new = false;
-    current_node = get_module_from_module<'/'>(path.c_str(), 
-                                               current_node, 
-                                               is_new);
+    current_node = get_module_from_module(path.c_str(), '/',
+                                          current_node, is_new);
     if(is_new)
     {
         Tang_File_Reader reader;
-        std::string path = current_node->get_path();
+        std::string path = current_node->get_module_path();
         if(!reader.open(path))
         {
             return nullptr;
