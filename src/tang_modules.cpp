@@ -7,9 +7,9 @@
 #ifdef _WIN32
 
 #include <Windows.h>
-#include <cstring>
 #include "ix_unicode.hpp"
 #include <climits>
+#include "windows_error.hpp"
 
 static bool env_to_string(const char *env_name, std::string &string_out)
 {
@@ -18,13 +18,13 @@ static bool env_to_string(const char *env_name, std::string &string_out)
     int wenv_name_length = ix_measure_utf8_to_utf16(env_name, env_name_length);
     wenv_name.resize(wenv_name_length);
     ix_convert_utf8_to_utf16(&(wenv_name[0]), env_name, env_name_length);
-    DWORD wout_length = INT_MAX;
+    DWORD wout_length = UINT_MAX;
     for(DWORD sz = 256; sz < wout_length; sz *= 2)
     {
         wout.resize(sz - 1);
         wout_length = GetEnvironmentVariable((const wchar_t*)wenv_name.c_str(),
                                              (wchar_t*)&(wout[0]), sz);
-        if(wout_length = 0)
+        if(wout_length == 0)
         {
             return false;
         }
@@ -35,12 +35,34 @@ static bool env_to_string(const char *env_name, std::string &string_out)
     return true;
 }
 
+
+// TODO: errno doesn't work here, need to use GetLastError.  I think I can
+//       cannibalize something from interxect.
+
 static std::string get_working_directory()
 {
-    // TODO
+    std::u16string wout;
+    DWORD wout_length = GetCurrentDirectory(0, nullptr);
+    if(wout_length == 0)
+    {
+        std::cout << "failed to get working directory with error \"" << 
+                 windows_error_string() << "\"" << std::endl;
+        return std::string();
+    }
+    wout.resize(wout_length - 1);
+    wout_length = GetCurrentDirectory(wout_length, (wchar_t*)&(wout[0]));
+    if(wout_length == 0)
+    {
+        std::cout << "failed to get working directory with error \"" << 
+                 windows_error_string() << "\"" << std::endl;
+        return std::string();
+    }
+    int out_length = ix_measure_utf16_to_utf8(wout.c_str(), wout_length);
+    std::string string_out;
+    string_out.resize(out_length);
+    ix_convert_utf16_to_utf8(&(string_out[0]), wout.c_str(), wout_length);
+    return string_out;
 }
-
-
 
 
 #define PATH_DELIMITER '\\'
@@ -49,8 +71,9 @@ static std::string get_working_directory()
 #else
 
 #include <unistd.h>
-#include <cstring>
 #include <cstdlib>
+#include <cstring>
+#include <cerrno>
 
 static bool env_to_string(const char *env_name, std::string &string_out)
 {
@@ -74,6 +97,10 @@ static std::string get_working_directory()
         {
             return_value.resize(strlen(return_value.data()));
             return return_value;
+        }
+        else
+        {
+            return std::string();
         }
     }
 }
@@ -189,7 +216,6 @@ bool Tang_Module_Tracker::initialize()
     std::string wd_path = get_working_directory();
     if(wd_path.empty())
     {
-        std::cout << "failed to get path" << std::endl;
         return false;
     }
     bool is_new;

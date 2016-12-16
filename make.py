@@ -8,7 +8,8 @@ source_files = [
     "tang_file_reader.cpp",
     "tang_file_writer.cpp",
     "ix_unicode.cpp",
-    "tang_modules.cpp"
+    "tang_modules.cpp",
+    "windows_error.cpp"
 ]
 
 
@@ -65,14 +66,16 @@ def source_files_to_paths(source_files):
 def compile_for_windows(files, debug, additional_flags, out_path):
     paths = source_files_to_paths(files)
     defines = []
+    additional_linker_flags = []
     if debug:
         additional_flags += ["/MTd"]
+        additional_linker_flags += ["/DEBUG", "/PDB:bin\\tangc.pdb"]
     else:
         additional_flags += ["/MT", "/O2"]
         defines += ["/DNDEBUG"]
     command = ["cl"] + defines + ["/I", "windows_include", "/Fo" + "obj\\"] + \
                windows_flags + additional_flags + paths + windows_libs + \
-               ["/Fe" + out_path, "/link", "/SUBSYSTEM:CONSOLE"]
+               ["/Fe" + out_path, "/link", "/SUBSYSTEM:CONSOLE"] + additional_linker_flags
     print("\n\n\n", command, "\n\n\n", sep="", end="")
     subprocess.call(command)
 
