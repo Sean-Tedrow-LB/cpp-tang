@@ -216,10 +216,10 @@ bool Tang_Module_Tracker::initialize()
 #ifdef _WIN32
     {
         std::string lib_step, wd_step;
-        lib_path_p = &(lib_path[0]);
-        const char *wd_path_p = &(wd_path[0]);
-        bool lib_path_just_root = get_step<PATH_DELIMITER>(lib_path_p, lib_step);
-        wd_path_just_root = get_step<PATH_DELIMITER>(wd_path_p, wd_step);
+        const char *lib_path_p = &(lib_path[0]);
+        wd_path_p = &(wd_path[0]);
+        bool lib_path_just_root = get_step(lib_path_p, PATH_DELIMITER, lib_step);
+        wd_path_just_root = get_step(wd_path_p, PATH_DELIMITER, wd_step);
         lib_path_p += lib_step.length() + 1;
         wd_path_p += wd_step.length() + 1;
         root.name = wd_step;
@@ -234,7 +234,7 @@ bool Tang_Module_Tracker::initialize()
             else
             {
                 library_directory_node = get_module_from_module(lib_path_p, 
-                                                                PATH_DELIMITER 
+                                                                PATH_DELIMITER, 
                                                                 &library_root, 
                                                                 is_new_throwaway);
             }
