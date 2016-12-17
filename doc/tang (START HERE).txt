@@ -1,6 +1,6 @@
 
 TODO: "to" keyword, casts address by default, or converts if >Type is used.
-
+TODO: "to" function should probably be "convert" for sake of clarity.
 
 
 hello-world.tang
@@ -75,7 +75,7 @@ func run()
        Both are variables.
        
        Each variable has a value and an address, but the pointer's
-       address can be changed to "point at" the address of another variable.
+       address can be changed to "point at" another address.
        
        The <- operator refers explicitly to the address of a variable.
        
@@ -282,12 +282,13 @@ func take(
 
 
 
-NOTE: distinction between print() and cmd-out()
+TODO: distinction between print() and cmd-out()
 
 NOTE: + - * / & | ^ % && || all will produce a temp variable which 
       can't be pointed to
 
 NOTE: to compare one pointer to another, use "is" keyword, or "is not"
+      Just sugar for "a<- == b" and "a<- != b"
 
 NOTE: multiple indirection isn't possible
 

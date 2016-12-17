@@ -31,7 +31,6 @@ struct Tang_Module_Tracker
     // on windows, the library directory might be on a separate drive.
     #ifdef _WIN32
     Tang_Module_Node library_root;
-    bool library_root_needed;
     #endif
     std::vector<Tang_Module_Node*> modules;
     Tang_Module_Node *working_directory_node,

@@ -254,7 +254,6 @@ bool Tang_Module_Tracker::initialize()
         root.name = wd_step;
         if(lib_step != wd_step)
         {
-            library_root_needed = true;
             library_root.name = lib_step;
             if(lib_path_just_root)
             {
@@ -318,9 +317,9 @@ bool Tang_Module_Tracker::initialize()
         else
         {
             library_directory_node = get_node_from_node(lib_path_p,
-                                                            PATH_DELIMITER, 
-                                                            &root, 
-                                                            is_new_throwaway);
+                                                        PATH_DELIMITER, 
+                                                        &root, 
+                                                        is_new_throwaway);
         }
     }
 #endif
