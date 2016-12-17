@@ -149,9 +149,9 @@ bool get_step(const char *path, char delimiter, std::string &out)
 
 
 Tang_Module_Node* 
-Tang_Module_Tracker::get_module_from_module(const char *p, char delimiter,
-                                            Tang_Module_Node *current_node,
-                                            bool &is_new_out)
+Tang_Module_Tracker::get_node_from_node(const char *p, char delimiter,
+                                        Tang_Module_Node *current_node,
+                                        bool &is_new_out)
 {
     std::string step;
     is_new_out = false;
@@ -191,6 +191,34 @@ Tang_Module_Tracker::get_module_from_module(const char *p, char delimiter,
     return current_node;
 }
 
+Tang_Module_Node* 
+Tang_Module_Tracker::load_module_from_node(const std::string &path, 
+                                             Tang_Module_Node *current_node)
+{
+    if(path.empty())
+    {
+        std::cout << "Path to module is empty" << std::endl;
+        return nullptr;
+    }
+    bool is_new = false;
+    current_node = get_node_from_node(path.c_str(), '/',
+                                      current_node, is_new);
+    if(is_new)
+    {
+        Tang_File_Reader reader;
+        std::string path = current_node->get_module_path();
+        if(!reader.open(path))
+        {
+            return nullptr;
+        }
+        std::cout << "Loading module \"" << path << "\"" << std::endl;
+        current_node->text.from(reader);
+        current_node->root_block = new Tang_Block;
+        modules.push_back(current_node);
+    }
+    return current_node;
+}
+
 
 bool Tang_Module_Tracker::initialize()
 {
@@ -206,6 +234,7 @@ bool Tang_Module_Tracker::initialize()
     std::string wd_path = get_working_directory();
     if(wd_path.empty())
     {
+        std::cout << "Failed to get working directory" << std::endl;
         return false;
     }
     bool is_new_throwaway, wd_path_just_root;
@@ -233,10 +262,10 @@ bool Tang_Module_Tracker::initialize()
             }
             else
             {
-                library_directory_node = get_module_from_module(lib_path_p, 
-                                                                PATH_DELIMITER 
-                                                                &library_root, 
-                                                                is_new_throwaway);
+                library_directory_node = get_node_from_node(lib_path_p, 
+                                                            PATH_DELIMITER 
+                                                            &library_root, 
+                                                            is_new_throwaway);
             }
         }
         else
@@ -247,10 +276,10 @@ bool Tang_Module_Tracker::initialize()
             }
             else
             {
-                library_directory_node = get_module_from_module(lib_path_p, 
-                                                                PATH_DELIMITER,
-                                                                &root, 
-                                                                is_new_throwaway);
+                library_directory_node = get_node_from_node(lib_path_p, 
+                                                            PATH_DELIMITER,
+                                                            &root, 
+                                                            is_new_throwaway);
             }
         }
     }
@@ -288,7 +317,7 @@ bool Tang_Module_Tracker::initialize()
         }
         else
         {
-            library_directory_node = get_module_from_module(lib_path_p,
+            library_directory_node = get_node_from_node(lib_path_p,
                                                             PATH_DELIMITER, 
                                                             &root, 
                                                             is_new_throwaway);
@@ -304,54 +333,12 @@ bool Tang_Module_Tracker::initialize()
     }
     else
     {
-        working_directory_node = get_module_from_module(wd_path_p, 
-                                                        PATH_DELIMITER,
-                                                        &root, 
-                                                        is_new_throwaway);
+        working_directory_node = get_node_from_node(wd_path_p, 
+                                                    PATH_DELIMITER,
+                                                    &root, 
+                                                    is_new_throwaway);
     }
     return true;
 }
 
 
-
-
-Tang_Module_Node* 
-Tang_Module_Tracker::load_module_from_working_dir(const std::string &path)
-{
-    return load_module_from_module(path, working_directory_node);
-}
-
-Tang_Module_Node* 
-Tang_Module_Tracker::load_module_from_library_dir(const std::string &path)
-{
-    return load_module_from_module(path, library_directory_node);
-}
-
-
-Tang_Module_Node* 
-Tang_Module_Tracker::load_module_from_module(const std::string &path, 
-                                             Tang_Module_Node *current_node)
-{
-    if(path.empty())
-    {
-        std::cout << "Path to module is empty" << std::endl;
-        return nullptr;
-    }
-    bool is_new = false;
-    current_node = get_module_from_module(path.c_str(), '/',
-                                          current_node, is_new);
-    if(is_new)
-    {
-        Tang_File_Reader reader;
-        std::string path = current_node->get_module_path();
-        if(!reader.open(path))
-        {
-            return nullptr;
-        }
-        std::cout << "Loading module \"" << path << "\"" << std::endl;
-        current_node->text.from(reader);
-        current_node->root_block = new Tang_Block;
-        modules.push_back(current_node);
-    }
-    return current_node;
-}

@@ -37,16 +37,32 @@ struct Tang_Module_Tracker
     Tang_Module_Node *working_directory_node,
                      *library_directory_node;
     
+    
+    
     bool initialize();
     
-    Tang_Module_Node* get_module_from_module(const char *path, char delimiter,
-                                             Tang_Module_Node *current_node,
-                                             bool &is_new_out);
     
-    Tang_Module_Node* load_module_from_working_dir(const std::string &path);
-    Tang_Module_Node* load_module_from_library_dir(const std::string &path);
+    
+    Tang_Module_Node* get_node_from_node(const char *path, char delimiter,
+                                         Tang_Module_Node *current_node,
+                                         bool &is_new_out);
+    Tang_Module_Node* load_module_from_node(const std::string &path, 
+                                            Tang_Module_Node *source_node);
+    
+    
+    Tang_Module_Node* load_module_from_working_dir(const std::string &path)
+    {
+        return load_module_from_node(path, working_directory_node);
+    }
+    Tang_Module_Node* load_module_from_library_dir(const std::string &path)
+    {
+        return load_module_from_node(path, library_directory_node);
+    }
     Tang_Module_Node* load_module_from_module(const std::string &path, 
-                                              Tang_Module_Node *source_node);
+                                              Tang_Module_Node *source_module)
+    {
+        return load_module_from_module(path, source_module->parent);
+    }
 };
 
 #endif
