@@ -11,7 +11,6 @@ struct Tang_Statement_Data
 {
     const char *start;
     int length, line_number;
-    Tang_Name *name;
 };
 
 struct Tang_Block_Template;
@@ -19,7 +18,7 @@ struct Tang_Block_Template;
 union Tang_Block_Template_Child_Data
 {
     Tang_Statement_Data  statement;
-    Tang_Block          *block;
+    Tang_Block_Template *block;
 };
 
 enum Tang_Block_Template_Child_Type
@@ -33,13 +32,12 @@ struct Tang_Block_Template_Child
     Tang_Block_Template_Child_Type  type;
     Tang_Block_Template_Child_Data  data;
     
-    ~Tang_Block_Template_Child()
+    Tang_Block_Template_Child()
     {
-        if(type == TANG_CHILD_BLOCK)
-        {
-            delete data.block;
-        }
+        // PASS
     }
+    Tang_Block_Template_Child(Tang_Block_Template_Child &&src);
+    ~Tang_Block_Template_Child();
 };
 
 struct Tang_Block_Template
@@ -59,7 +57,10 @@ struct Tang_Block_Template
                                                 is_compilable;
     // NOT FINISHED: expression templates, return type, compiled versions
     
-    Tang_Block_Template();
+    Tang_Block_Template_Child* new_child();
+    
+    Tang_Block_Template(Tang_Block_Template *parent_in = nullptr, 
+                        int indentation_in = 0);
 };
 
 #endif

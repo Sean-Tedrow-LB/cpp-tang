@@ -4,7 +4,6 @@
 #include "tang_modules.hpp"
 #include <string>
 
-bool tang_compile(Tang_Module_Tracker &module_tracker, 
-                  const std::string &out_path);
+bool tang_compile(Tang_Module_Tracker &module_tracker);
 
 #endif

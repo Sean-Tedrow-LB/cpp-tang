@@ -4,50 +4,24 @@
 struct Tang_Name;
 
 #include <string>
-#include "tang_funamental_types.hpp"
+#include "tang_fundamental_types.hpp"
 #include "tang_block_template.hpp"
 #include <vector>
+#include <new>
 
-// TODO: need to support synonyms, addons
 // TODO: also need to support builtins
 
 enum Tang_Name_Type
 {
-    TANG_NAME_INDETERMINATE,
-    TANG_NAME_VARIABLE,
     TANG_NAME_CONSTANT,
     TANG_NAME_GROUP,
     TANG_NAME_CLASS,
     TANG_NAME_FORM,
     TANG_NAME_ALIAS,
-    TANG_NAME_FUNCTION
+    TANG_NAME_FUNCTION,
+    TANG_NAME_INDETERMINATE,
+    TANG_NAME_VARIABLE
 };
-
-struct Tang_Name
-{
-    std::string name;
-    int line_number = 0;
-    Tang_Name_Type type;
-    void *data;
-    
-    void init_indeterminate(/* TODO */);
-    void init_variable(/* TODO */);
-    void init_constant(/* TODO */);
-    void init_group(/* TODO */);
-    void init_structure(/* TODO */);
-    void init_alias(/* TODO */);
-    void init_function(/* TODO */);
-    
-    ~Tang_Name_Base()
-    {
-        // TEMPORARY
-    }
-};
-
-
-
-
-
 
 struct Tang_Name_Constant // async
 {
@@ -90,7 +64,7 @@ struct Tang_Name_Function_Synonym
     Tang_Block_Template *block;
     int origin_id;
     bool is_c;
-}
+};
 
 struct Tang_Name_Function // async
 {
@@ -99,12 +73,68 @@ struct Tang_Name_Function // async
 
 struct Tang_Name_Indeterminate // sync
 {
+    std::string default_determinate;
     // TODO
 };
 
 struct Tang_Name_Variable // sync
 {
+    std::string type_string, default_value;
+    // NOTE: type string is used temporarily for function parameters, until
+    //       the sync pass gets here.
     // TODO
 };
+
+
+#define TANG_NAME_GETTER(thing_name, Thing, pointer) \
+    Tang_Name_##Thing* thing_name##_data() \
+    { \
+        return (Tang_Name_##Thing*)pointer; \
+    } \
+    const Tang_Name_##Thing* thing_name##_data() const \
+    { \
+        return (const Tang_Name_##Thing*)pointer; \
+    }
+
+#define TANG_NAME_INITIALIZER(thing_name, THING_ENUM, \
+                              the_enum, Thing, pointer) \
+    void init_##thing_name() \
+    { \
+        the_enum = TANG_NAME_##THING_ENUM; \
+        pointer = (void*)(new Tang_Name_##Thing); \
+    }
+
+struct Tang_Name
+{
+    std::string name;
+    int line_number = 0;
+    Tang_Name_Type type;
+    void *data;
+    
+    TANG_NAME_GETTER(constant, Constant, data)
+    TANG_NAME_GETTER(group, Group, data)
+    TANG_NAME_GETTER(structure, Structure, data)
+    TANG_NAME_GETTER(alias, Alias, data)
+    TANG_NAME_GETTER(function, Function, data)
+    TANG_NAME_GETTER(indeterminate, Indeterminate, data)
+    TANG_NAME_GETTER(variable, Variable, data)
+    
+    TANG_NAME_INITIALIZER(constant, CONSTANT, type, Constant, data)
+    TANG_NAME_INITIALIZER(group, GROUP, type, Group, data)
+    TANG_NAME_INITIALIZER(form, FORM, type, Structure, data)
+    TANG_NAME_INITIALIZER(class, CLASS, type, Structure, data)
+    TANG_NAME_INITIALIZER(alias, ALIAS, type, Alias, data)
+    TANG_NAME_INITIALIZER(function, FUNCTION, type, Function, data)
+    TANG_NAME_INITIALIZER(indeterminate, INDETERMINATE, type, Indeterminate, data)
+    TANG_NAME_INITIALIZER(variable, VARIABLE, type, Variable, data)
+    
+    Tang_Name(Tang_Name &&src)
+    {
+        data = src.data;
+        src.data = nullptr;
+    }
+    ~Tang_Name();
+};
+
 
 #endif

@@ -1,7 +1,7 @@
 #ifndef __TANG_MODULES__
 #define __TANG_MODULES__
 
-#include "tang_block.hpp"
+#include "tang_block_template.hpp"
 #include <map>
 #include <vector>
 #include <string>
@@ -14,7 +14,7 @@ struct Tang_Module_Node
     std::map<std::string, Tang_Module_Node>  children;
     Tang_Text_Without_Comments               text;
     Tang_Module_Node                        *parent       = nullptr;
-    Tang_Block                              *root_block   = nullptr;
+    Tang_Block_Template                     *root_block   = nullptr;
     
     ~Tang_Module_Node()
     {

@@ -9,7 +9,11 @@ source_files = [
     "tang_file_writer.cpp",
     "ix_unicode.cpp",
     "tang_modules.cpp",
-    "windows_error.cpp"
+    "windows_error.cpp",
+    "tang_block_template.cpp",
+    "tang_compilation.cpp",
+    "tang_name.cpp",
+    "tang_output.cpp"
 ]
 
 

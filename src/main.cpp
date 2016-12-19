@@ -8,9 +8,10 @@
 #include <vector>
 #include "tang_file_writer.hpp"
 #include "tang_modules.hpp"
+#include "tang_output.hpp"
+#include "tang_compilation.hpp"
 
 
-// TODO: make writer and reader take std::string for open()
 
 
 #ifdef _WIN32
@@ -51,15 +52,6 @@ int main(int argc, char **argv)
     {
         return -1;
     }
-    if(arg_parser.mode != TANG_MODE_TEXT_WITHOUT_COMMENTS)
-    {
-        std::cout << "In this early build of the compiler,"
-                     " the output mode must be set to "
-                     TANG_FLAG_MODE_TEXT_WITHOUT_COMMENTS << std::endl;
-        return -1;
-    }
-    
-    // TODO use Tang_Module_Tracker
     
     Tang_Module_Tracker module_tracker;
     if(!module_tracker.initialize())
@@ -71,19 +63,25 @@ int main(int argc, char **argv)
         const std::string &in_path = arg_parser.in_paths[i];
         module_tracker.load_module_from_working_dir(in_path);
     }
+    tang_compile(module_tracker);
     Tang_File_Writer writer;
     if(!writer.open(arg_parser.out_path))
     {
         return -1;
     }
-    std::string header;
-    for(int i = 0; i < (int)module_tracker.modules.size(); i++)
+    switch(arg_parser.mode)
     {
-        Tang_Module_Node *module = module_tracker.modules[i];
-        header = std::string("\n\n\n***** FOLLOWING IS TEXT OF MODULE \"") + 
-                                              module->name + "\" *****\n\n\n";
-        writer.write(header);
-        writer.write(module->text.text);
+    case TANG_MODE_TEXT_WITHOUT_COMMENTS:
+        output_text_without_comments(module_tracker, writer);
+        break;
+    case TANG_MODE_BLOCKS_AND_STATEMENTS:
+        output_blocks_and_statements(module_tracker, writer);
+        break;
+    default:
+        std::cout << "In this early alpha version of the compiler, "
+                     "the output mode must be set to " 
+                     TANG_FLAG_MODE_TEXT_WITHOUT_COMMENTS " or "
+                     TANG_FLAG_MODE_BLOCKS_AND_STATEMENTS << std::endl;
     }
     return 0;
 }
