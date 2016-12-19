@@ -107,7 +107,7 @@ struct Tang_Name_Variable // sync
 struct Tang_Name
 {
     std::string name;
-    int line_number = 0;
+    int line_number;
     Tang_Name_Type type;
     void *data;
     
@@ -132,6 +132,10 @@ struct Tang_Name
     {
         data = src.data;
         src.data = nullptr;
+    }
+    Tang_Name()
+    {
+        // PASS
     }
     ~Tang_Name();
 };
