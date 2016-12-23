@@ -9,7 +9,7 @@ struct Tang_Name;
 #include <vector>
 #include <new>
 
-// TODO: also need to support builtins
+// TODO: also need to support builtins?  Actually maybe I don't
 
 enum Tang_Name_Type
 {
@@ -30,14 +30,16 @@ struct Tang_Name_Constant // async
 
 struct Tang_Name_Group // async
 {
-    std::map<std::string, Tang_Name> names;
-    Tang_Block_Template *imported_block;
+    std::map<std::string, Tang_Name>   names;
+    Tang_Block_Template               *imported_block = nullptr;
 };
 
 struct Tang_Name_Structure_Synonym
 {
-    Tang_Block_Template *block;
-    int origin_id;
+    std::string base_string;
+    Tang_Name_Structure_Synonym  *base_structure = nullptr;
+    Tang_Block_Template          *block          = nullptr;
+    int                           origin_id      = -1;
 };
 
 struct Tang_Name_Structure // async
@@ -47,23 +49,25 @@ struct Tang_Name_Structure // async
 
 struct Tang_Name_Alias_Indeterminate
 {
-    std::string name, default_value;
-    int out_position;
+    std::string name, 
+                default_value;
+    int         out_position;
 };
 
+// TODO: ALIASES NEED SYNONYMS?
 struct Tang_Name_Alias //async
 {
-    Tang_Fundamental_Type                        ftype;
-    Tang_Name                                   *name;
-    std::string                                  c_type_name;
     std::vector<Tang_Name_Alias_Indeterminate>   indeterminate_list;
+    Tang_Name                                   *name   = nullptr;
+    Tang_Fundamental_Type                        ftype  = TANG_FTYPE_UNSET;
+    bool                                         is_c   = false;
 };
 
 struct Tang_Name_Function_Synonym
 {
-    Tang_Block_Template *block;
-    int origin_id;
-    bool is_c;
+    Tang_Block_Template  *block     = nullptr;
+    int                   origin_id = -1;
+    bool                  is_c      = false;
 };
 
 struct Tang_Name_Function // async
@@ -79,8 +83,9 @@ struct Tang_Name_Indeterminate // sync
 
 struct Tang_Name_Variable // sync
 {
-    std::string type_string, default_value;
-    // NOTE: type string is used temporarily for function parameters, until
+    std::string type_string, 
+                default_value;
+    // NOTE: type_string is used temporarily for function parameters, until
     //       the sync pass gets here.
     // TODO
 };

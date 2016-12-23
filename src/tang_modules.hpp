@@ -7,12 +7,15 @@
 #include <string>
 #include "tang_comment_removal.hpp"
 #include <new>
+#include "tang_name.hpp"
 
 struct Tang_Module_Node
 {
     std::string name;
     std::map<std::string, Tang_Module_Node>  children;
     Tang_Text_Without_Comments               text;
+    std::vector<Tang_Name_Function_Synonym>  c_functions,
+                                             run_functions;
     Tang_Module_Node                        *parent       = nullptr;
     Tang_Block_Template                     *root_block   = nullptr;
     

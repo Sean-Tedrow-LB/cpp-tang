@@ -13,7 +13,8 @@ source_files = [
     "tang_block_template.cpp",
     "tang_compilation.cpp",
     "tang_name.cpp",
-    "tang_output.cpp"
+    "tang_output.cpp",
+    "tang_async_pass.cpp"
 ]
 
 
