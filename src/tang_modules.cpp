@@ -206,12 +206,12 @@ Tang_Module_Tracker::load_module_from_node(const std::string &path,
     if(is_new)
     {
         Tang_File_Reader reader;
-        current_node->root_block = new Tang_Block_Template;
         std::string path = current_node->get_module_path();
         if(!reader.open(path))
         {
             return nullptr;
         }
+        current_node->root_block = new Tang_Block_Template;
         std::cout << "Loading module \"" << path << "\"" << std::endl;
         current_node->text.from(reader);
         modules.push_back(current_node);

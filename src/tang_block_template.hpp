@@ -6,31 +6,17 @@ struct Tang_Block_Template;
 #include <vector>
 #include <map>
 #include "tang_name.hpp"
-
-struct Tang_Statement_Data
-{
-    const char *start;
-    int length, line_number;
-};
-
-struct Tang_Block_Template;
-
-union Tang_Block_Template_Child_Data
-{
-    Tang_Statement_Data  statement;
-    Tang_Block_Template *block;
-};
-
-enum Tang_Block_Template_Child_Type
-{
-    TANG_CHILD_STATEMENT,
-    TANG_CHILD_BLOCK
-};
+#include "tang_part.hpp"
 
 struct Tang_Block_Template_Child
 {
-    Tang_Block_Template_Child_Type  type;
-    Tang_Block_Template_Child_Data  data;
+    std::vector<Tang_Part> parts;
+    Tang_Block_Template *block = nullptr;
+    const char *start = nullptr;
+    int length = 0, line_number = 0;
+    bool is_erroneous = false;
+    
+    Tang_Part* new_part();
     
     Tang_Block_Template_Child()
     {

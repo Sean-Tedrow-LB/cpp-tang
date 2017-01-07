@@ -6,17 +6,22 @@
 
 struct Tang_File_Reader
 {
-    std::FILE *file;
     std::string text_buffer;
     int buffer_progress;
     
-    
-    Tang_File_Reader();
-    ~Tang_File_Reader();
-    
     bool open(const std::string &path);
-    char get() const;
-    bool next();
+    const char* get() const
+    {
+        return text_buffer.data() + buffer_progress;
+    }
+    int length_left() const
+    {
+        return text_buffer.length() - buffer_progress;
+    }
+    void advance(int distance)
+    {
+        buffer_progress += distance;
+    }
 };
 
 

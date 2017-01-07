@@ -24,25 +24,25 @@ Tang_Block_Template_Child* Tang_Block_Template::new_child()
     return &(children[sz]);
 }
 
+
+Tang_Part* Tang_Block_Template_Child::new_part()
+{
+    int sz = (int)parts.size();
+    parts.resize(sz + 1);
+    return &(parts[sz]);
+}
+
 Tang_Block_Template_Child::~Tang_Block_Template_Child()
 {
-    if(type == TANG_CHILD_BLOCK)
-    {
-        delete data.block;
-    }
+    delete block;
 }
 
 Tang_Block_Template_Child::Tang_Block_Template_Child(Tang_Block_Template_Child &&src)
 {
-    if(src.type == TANG_CHILD_BLOCK)
-    {
-        type = TANG_CHILD_BLOCK;
-        data.block = src.data.block;
-        src.data.block = nullptr;
-    }
-    else
-    {
-        type = TANG_CHILD_STATEMENT;
-        data = src.data;
-    }
+    parts        = (std::vector<Tang_Part>&&)src.parts;
+    block        = src.block;
+    src.block    = nullptr;
+    start        = src.start;
+    length       = src.length;
+    line_number  = src.line_number;
 }

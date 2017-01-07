@@ -31,9 +31,9 @@ static void output_block(std::string &statement,
     for(int i = 0; i < (int)block->children.size(); i++)
     {
         const Tang_Block_Template_Child &child = block->children[i];
-        if(child.type == TANG_CHILD_BLOCK)
+        if(child.block)
         {
-            output_block(statement, child.data.block, writer);
+            output_block(statement, child.block, writer);
         }
         else
         {
@@ -43,12 +43,12 @@ static void output_block(std::string &statement,
                 statement[j] = ' ';
             }
             statement += std::string("Line ") + 
-                       std::to_string(child.data.statement.line_number) + ": ";
+                       std::to_string(child.line_number) + ": ";
             int header_length = (int)statement.length();
-            int statement_length = child.data.statement.length;
+            int statement_length = child.length;
             statement.resize(header_length + statement_length);
             char *out = &(statement[header_length]);
-            const char *statement_in = child.data.statement.start;
+            const char *statement_in = child.start;
             for(int j = 0; j < statement_length; j++)
             {
                 out[j] = statement_in[j];

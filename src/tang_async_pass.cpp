@@ -1,299 +1,270 @@
 #include "tang_async_pass.hpp"
-#include "tang_keyword_search.hpp"
 #include <iostream>
+#include <vector>
+#include <map>
+#include "tang_character_map.hpp"
+#include "tang_statementify.hpp"
+#include "tang_partify.hpp"
 
 
-// TODO: improve tabs warning: should list which lines the tabs were found on.
 
 
 
-// NOTE: returns whether or not tabs were found
-static bool statementify_module(Tang_Module_Node *module)
+enum Tang_Last_Statement_Type_Async
 {
-    bool tabs_found = false;
-    Tang_Block_Template *block = module->root_block;
-    const std::string &text = module->text.text;
+    TANG_LAST_STATEMENT_UNSET_ASYNC,
+    TANG_LAST_STATEMENT_FUNCTION,
+    TANG_LAST_STATEMENT_STRUCTURE,
+    TANG_LAST_STATEMENT_META_IF_ASYNC,
+    TANG_LAST_STATEMENT_META_ELSE_ASYNC
+};
+
+union Tang_Last_Statement_Union_Async
+{
+    Tang_Name_Function_Synonym   *function;
+    Tang_Name_Structure_Synonym  *structure;
+    bool                          meta_if_result;
+};
+
+struct Tang_Last_Statement_Async
+{
+    Tang_Last_Statement_Type_Async type = TANG_LAST_STATEMENT_UNSET_ASYNC;
+    Tang_Last_Statement_Union_Async data;
     
-    int i = 0;
-    char c;
-    int line_number = 1;
-    while(true)
+    void reset()
     {
-        int indentation = 0;
-        while(true)
+        type = TANG_LAST_STATEMENT_UNSET_ASYNC;
+    }
+};
+
+typedef void 
+(*Tang_Keyword_Handler_Async)(Tang_Module_Tracker &tracker, 
+                              Tang_Module_Node *module,
+                              Tang_Block_Template *block,
+                              Tang_Block_Template *out_block,
+                              int statement_i, 
+                              Tang_Last_Statement_Async &last_statement);
+
+
+typedef std::map<std::string, Tang_Keyword_Handler_Async> Tang_Keyword_Map_Async;
+
+
+
+static void block_async_pass(Tang_Module_Tracker &tracker, 
+                             Tang_Module_Node *module, 
+                             const Tang_Keyword_Map_Async &handler_map, 
+                             Tang_Block_Template *block, 
+                             Tang_Block_Template *out_block)
+{
+    Tang_Last_Statement_Async last_statement;
+    for(int i = 0; i < (int)block->children.size(); i++)
+    {
+        Tang_Block_Template_Child &child = block->children[i];
+        if(!child.block)
         {
-            if(i >= (int)text.length())
+            if(child.parts.empty() || child.is_erroneous)
             {
-                return tabs_found;
+                last_statement.reset();
+                continue;
             }
-            c = text[i];
-            if((c == '\r') || (c == '\n'))
+            Tang_Part &part = child.parts[0];
+            if(part.type != TANG_PART_WORD)
             {
-                indentation = 0;
-                line_number++;
-                i++;
-                if(c == '\r')
-                {
-                    if(i >= (int)text.length())
-                    {
-                        return tabs_found;
-                    }
-                    char n = text[i];
-                    if(n == '\n')
-                    {
-                        i++;
-                    }
-                }
+                last_statement.reset();
+                continue;
             }
-            else
+            auto handler_i = handler_map.find(part.value_string);
+            if(handler_i == handler_map.end())
             {
-                if(c != ' ')
-                {
-                    if(c == '\t')
-                    {
-                        tabs_found = true;
-                    }
-                    break;
-                }
-                indentation++;
-                i++;
+                last_statement.reset();
+                continue;
             }
-        }
-        Tang_Block_Template_Child *child = nullptr;
-        if(indentation > block->indentation)
-        {
-            child = block->new_child();
-            child->type = TANG_CHILD_BLOCK;
-            block = new Tang_Block_Template(block, indentation);
-            child->data.block = block;
-            child = block->new_child();
-        }
-        else if(indentation < block->indentation)
-        {
-            do
-            {
-                block = block->parent;
-            }
-            while(indentation < block->indentation);
-            child = block->new_child();
-            if(indentation > block->indentation)
-            {
-                child->type = TANG_CHILD_BLOCK;
-                block = new Tang_Block_Template(block, indentation);
-                child->data.block = block;
-                child = block->new_child();
-            }
+            Tang_Keyword_Handler_Async handler = handler_i->second;
+            handler(tracker, module, block, out_block, i, last_statement);
         }
         else
         {
-            child = block->new_child();
-        }
-        child->type = TANG_CHILD_STATEMENT;
-        child->data.statement.line_number = line_number;
-        const char *start = &(text[i]);
-        child->data.statement.start = start;
-        int j = 0;
-        while(true)
-        {
-            if(i >= (int)text.length())
+            Tang_Block_Template *child_block       = child.block,
+                                *child_out_block   = child.block;
+            switch(last_statement.type)
             {
-                child->data.statement.length = j;
-                return tabs_found;
-            }
-            c = text[i];
-            if((c == '\r') || (c == '\n'))
-            {
-                line_number++;
-                i++;
-                if(c == '\r')
-                {
-                    if(i >= (int)text.length())
-                    {
-                        child->data.statement.length = j;
-                        return tabs_found;
-                    }
-                    char n = text[i];
-                    if(n == '\n')
-                    {
-                        i++;
-                    }
-                }
-                child->data.statement.length = j;
+            case TANG_LAST_STATEMENT_FUNCTION:
+                last_statement.data.function->block = child_block;
+                break;
+            case TANG_LAST_STATEMENT_STRUCTURE:
+                last_statement.data.structure->block = child_block;
+                break;
+            case TANG_LAST_STATEMENT_META_IF_ASYNC:
+            case TANG_LAST_STATEMENT_META_ELSE_ASYNC:
+                child_out_block = out_block;
+            default:
                 break;
             }
-            else if(c == '\\')
-            {
-                i++; j++;
-                if(i >= (int)text.length())
-                {
-                    child->data.statement.length = j;
-                    return tabs_found;
-                }
-                c = text[i];
-                if((c == '\r') || (c == '\n'))
-                {
-                    line_number++;
-                    i++; j++;
-                    if(c == '\r')
-                    {
-                        if(i >= (int)text.length())
-                        {
-                            child->data.statement.length = j;
-                            return tabs_found;
-                        }
-                        char n = text[i];
-                        if(n == '\n')
-                        {
-                            i++; j++;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                i++; j++;
-            }
+            block_async_pass(tracker, module, handler_map, 
+                             child_block, child_out_block);
         }
     }
 }
 
-static void async_manage_last_statement(Tang_Last_Statement &last_statement,
-                                        Tang_Block_Template *child_block,
-                                        Tang_Block_Template **child_func_block)
+static void module_async_pass(Tang_Module_Tracker &tracker, 
+                              Tang_Module_Node *module,
+                              const Tang_Keyword_Map_Async &async_keyword_handlers,
+                              const Tang_Character_Compendium &compendium)
 {
-    switch(last_statement.type)
-    {
-    case TANG_LAST_STATEMENT_FUNCTION:
-        *child_func_block = child_block;
-        last_statement.synonym.function->block = child_block;
-        break;
-    case TANG_LAST_STATEMENT_STRUCTURE:
-        last_statement.synonym.structure->block = child_block;
-    default:
-        break;
-    }
-}
-
-
-static bool async_statement_iterate(Tang_Keyword_Map &handler_map, 
-                                    Tang_Module_Tracker &tracker,
-                                    Tang_Module_Node *module,
-                                    Tang_Block_Template *block, 
-                                    Tang_Block_Template *func_block)
-{
-    Tang_Last_Statement last_statement;
-    for(int i = 0; i < (int)block->children.size(); i++)
-    {
-        keyword_search<async_statement_iterate,
-                       async_manage_last_statement>
-                      (handler_map, tracker, module, block, 
-                       func_block, last_statement, i);
-    }
-    return true;
-}
-
-
-
-void module_async_pass(Tang_Module_Tracker &tracker, 
-                       Tang_Module_Node *module,
-                       Tang_Keyword_Map async_keyword_handlers)
-{
-    bool tabs_found = statementify_module(module);
-    if(tabs_found)
+    std::cout << "\n\n\n*** Performing asynchronous pass on module \"" <<
+                 module->get_module_path() << "\" ***" << std::endl;
+    std::vector<int> tabs;
+    statementify_module(module, tabs);
+    partify_module(module, compendium);
+    if(!tabs.empty())
     {
         std::cout << "WARNING: tab characters found in module \"" <<
                      module->get_module_path() << 
                      "\".  (Tabs aren't interpreted as proper whitespace "
-                     "for the purposes of forming blocks)" << std::endl;
+                     "in the process of forming blocks.)  "
+                     "Tabs were found on line(s): " << std::endl;
+        for(int i = 0; i < (int)tabs.size(); i++)
+        {
+            std::cout << tabs[i] << std::endl;
+        }
     }
-    async_statement_iterate(async_keyword_handlers, tracker, module, 
-                            module->root_block, nullptr);
+    Tang_Block_Template *block = module->root_block;
+    block_async_pass(tracker, module, async_keyword_handlers, block, block);
 }
 
-static bool module_keyword_handler(Tang_Module_Tracker &tracker, 
-                                     Tang_Module_Node *module,
-                                     Tang_Block_Template *block,
-                                     int statement_i, 
-                                     Tang_Last_Statement &statement_out)
+static void module_keyword_handler(Tang_Module_Tracker &tracker, 
+                                   Tang_Module_Node *module,
+                                   Tang_Block_Template *block,
+                                   Tang_Block_Template *out_block,
+                                   int statement_i, 
+                                   Tang_Last_Statement_Async &last_statement)
 {
+    std::cout << "module keyword" << std::endl;
     // TODO
-    return false;
 }
 
-static bool library_keyword_handler(Tang_Module_Tracker &tracker, 
+static void library_keyword_handler(Tang_Module_Tracker &tracker, 
                                     Tang_Module_Node *module,
                                     Tang_Block_Template *block,
+                                    Tang_Block_Template *out_block,
                                     int statement_i, 
-                                    Tang_Last_Statement &statement_out)
+                                    Tang_Last_Statement_Async &last_statement)
 {
+    std::cout << "library keyword" << std::endl;
     // TODO
-    return false;
 }
 
-static bool const_keyword_handler(Tang_Module_Tracker &tracker, 
+static void const_keyword_handler(Tang_Module_Tracker &tracker, 
                                   Tang_Module_Node *module,
                                   Tang_Block_Template *block,
+                                  Tang_Block_Template *out_block,
                                   int statement_i, 
-                                  Tang_Last_Statement &statement_out)
+                                  Tang_Last_Statement_Async &last_statement)
 {
+    std::cout << "const keyword" << std::endl;
     // TODO
-    return false;
 }
 
-static bool class_keyword_handler(Tang_Module_Tracker &tracker, 
+static void class_keyword_handler(Tang_Module_Tracker &tracker, 
                                   Tang_Module_Node *module,
                                   Tang_Block_Template *block,
+                                  Tang_Block_Template *out_block,
                                   int statement_i, 
-                                  Tang_Last_Statement &statement_out)
+                                  Tang_Last_Statement_Async &last_statement)
 {
+    std::cout << "class keyword" << std::endl;
     // TODO
-    return false;
 }
 
-static bool form_keyword_handler(Tang_Module_Tracker &tracker, 
+static void form_keyword_handler(Tang_Module_Tracker &tracker, 
                                  Tang_Module_Node *module,
                                  Tang_Block_Template *block,
+                                 Tang_Block_Template *out_block,
                                  int statement_i, 
-                                 Tang_Last_Statement &statement_out)
+                                 Tang_Last_Statement_Async &last_statement)
 {
+    std::cout << "form keyword" << std::endl;
     // TODO
-    return false;
 }
 
-static bool alias_keyword_handler(Tang_Module_Tracker &tracker, 
+static void union_keyword_handler(Tang_Module_Tracker &tracker, 
                                   Tang_Module_Node *module,
                                   Tang_Block_Template *block,
+                                  Tang_Block_Template *out_block,
                                   int statement_i, 
-                                  Tang_Last_Statement &statement_out)
+                                  Tang_Last_Statement_Async &last_statement)
 {
+    std::cout << "union keyword" << std::endl;
     // TODO
-    return false;
 }
 
-static bool func_keyword_handler(Tang_Module_Tracker &tracker, 
+static void alias_keyword_handler(Tang_Module_Tracker &tracker, 
+                                  Tang_Module_Node *module,
+                                  Tang_Block_Template *block,
+                                  Tang_Block_Template *out_block,
+                                  int statement_i, 
+                                  Tang_Last_Statement_Async &last_statement)
+{
+    std::cout << "alias keyword" << std::endl;
+    // TODO
+}
+
+static void func_keyword_handler(Tang_Module_Tracker &tracker, 
                                  Tang_Module_Node *module,
                                  Tang_Block_Template *block,
+                                 Tang_Block_Template *out_block,
                                  int statement_i, 
-                                 Tang_Last_Statement &statement_out)
+                                 Tang_Last_Statement_Async &last_statement)
 {
+    std::cout << "func keyword" << std::endl;
     // TODO
-    return false;
 }
 
-
-void tang_async_pass(Tang_Module_Tracker &tracker)
+static void meta_keyword_handler(Tang_Module_Tracker &tracker, 
+                                 Tang_Module_Node *module,
+                                 Tang_Block_Template *block,
+                                 Tang_Block_Template *out_block,
+                                 int statement_i, 
+                                 Tang_Last_Statement_Async &last_statement)
 {
-    Tang_Keyword_Map keyword_map;
+    std::cout << "meta keyword" << std::endl;
+    // TODO
+}
+
+static void enum_keyword_handler(Tang_Module_Tracker &tracker, 
+                                 Tang_Module_Node *module,
+                                 Tang_Block_Template *block,
+                                 Tang_Block_Template *out_block,
+                                 int statement_i, 
+                                 Tang_Last_Statement_Async &last_statement)
+{
+    std::cout << "enum keyword" << std::endl;
+    // TODO
+}
+
+static void tang_async_keyword_map(Tang_Keyword_Map_Async &keyword_map)
+{
     keyword_map["module"]   = module_keyword_handler;
     keyword_map["library"]  = library_keyword_handler;
     keyword_map["const"]    = const_keyword_handler;
     keyword_map["class"]    = class_keyword_handler;
     keyword_map["form"]     = form_keyword_handler;
+    keyword_map["union"]    = union_keyword_handler;
     keyword_map["alias"]    = alias_keyword_handler;
     keyword_map["func"]     = func_keyword_handler;
+    keyword_map["meta"]     = meta_keyword_handler;
+    keyword_map["enum"]     = enum_keyword_handler;
+}
+
+void tang_async_pass(Tang_Module_Tracker &tracker)
+{
+    Tang_Character_Compendium compendium;
+    Tang_Keyword_Map_Async keyword_map;
+    tang_async_keyword_map(keyword_map);
     for(int i = 0; i < (int)tracker.modules.size(); i++)
     {
-        module_async_pass(tracker, tracker.modules[i], keyword_map);
+        module_async_pass(tracker, tracker.modules[i], 
+                          keyword_map, compendium);
     }
 }
 

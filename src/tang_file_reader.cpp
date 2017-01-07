@@ -4,21 +4,10 @@
 #include <cerrno>
 #include <cstring>
 #include "ix_unicode.hpp"
+#include <cstdio>
+
 
 #define TANG_READ_BUFFER_SIZE 16000
-
-Tang_File_Reader::Tang_File_Reader()
-{
-    file = nullptr;
-    text_buffer.reserve(TANG_READ_BUFFER_SIZE);
-}
-Tang_File_Reader::~Tang_File_Reader()
-{
-    if(file)
-    {
-        fclose(file);
-    }
-}
 
 #ifdef _WIN32
 
@@ -53,22 +42,26 @@ static bool check_for_bom(const char *to_check)
 
 bool Tang_File_Reader::open(const std::string &path)
 {
-    if(file)
-    {
-        fclose(file);
-    }
-    file = do_fopen(path.c_str(), path.length());
+    FILE *file = do_fopen(path.c_str(), path.length());
     if(!file)
     {
         std::cout << "Failed to open file \"" << path;
         std::cout << "\" with error \"" << std::strerror(errno) << "\"\n";
         return false;
     }
-    text_buffer.resize(TANG_READ_BUFFER_SIZE);
-    text_buffer.resize(fread(&(text_buffer[0]), sizeof(char), 
-                             (size_t)TANG_READ_BUFFER_SIZE, file));
+    size_t read_size = 0;
+    std::string::size_type old_length = 0;
+    do
+    {
+        old_length = text_buffer.length();
+        text_buffer.resize(old_length + TANG_READ_BUFFER_SIZE);
+        read_size = fread(&(text_buffer[old_length]), sizeof(char), 
+                          (size_t)TANG_READ_BUFFER_SIZE, file);
+    }
+    while(read_size == TANG_READ_BUFFER_SIZE);
+    text_buffer.resize(old_length + read_size);
     buffer_progress = 0;
-    if(text_buffer.length() >= 3)
+    if(text_buffer.length() >= IX_UTF8_BOM_SIZE)
     {
         if(check_for_bom(text_buffer.data()))
         {
@@ -76,20 +69,4 @@ bool Tang_File_Reader::open(const std::string &path)
         }
     }
     return true;
-}
-char Tang_File_Reader::get() const
-{
-    return text_buffer[buffer_progress];
-}
-bool Tang_File_Reader::next()
-{
-    buffer_progress++;
-    if(buffer_progress >= TANG_READ_BUFFER_SIZE)
-    {
-        text_buffer.resize(TANG_READ_BUFFER_SIZE);
-        text_buffer.resize(fread(&(text_buffer[0]), sizeof(char), 
-                           (size_t)TANG_READ_BUFFER_SIZE, file));
-        buffer_progress = 0;
-    }
-    return buffer_progress < (int)text_buffer.length();
 }

@@ -9,7 +9,7 @@ struct Tang_Name;
 #include <vector>
 #include <new>
 
-// TODO: also need to support builtins?  Actually maybe I don't
+
 
 enum Tang_Name_Type
 {
@@ -17,6 +17,7 @@ enum Tang_Name_Type
     TANG_NAME_GROUP,
     TANG_NAME_CLASS,
     TANG_NAME_FORM,
+    TANG_NAME_UNION,
     TANG_NAME_ALIAS,
     TANG_NAME_FUNCTION,
     TANG_NAME_INDETERMINATE,
@@ -36,7 +37,7 @@ struct Tang_Name_Group // async
 
 struct Tang_Name_Structure_Synonym
 {
-    std::string base_string;
+    std::string                   base_string;
     Tang_Name_Structure_Synonym  *base_structure = nullptr;
     Tang_Block_Template          *block          = nullptr;
     int                           origin_id      = -1;
@@ -54,13 +55,18 @@ struct Tang_Name_Alias_Indeterminate
     int         out_position;
 };
 
-// TODO: ALIASES NEED SYNONYMS?
-struct Tang_Name_Alias //async
+struct Tang_Name_Alias_Synonym
 {
+    std::string                                  temp_string;
     std::vector<Tang_Name_Alias_Indeterminate>   indeterminate_list;
     Tang_Name                                   *name   = nullptr;
     Tang_Fundamental_Type                        ftype  = TANG_FTYPE_UNSET;
     bool                                         is_c   = false;
+};
+
+struct Tang_Name_Alias //async
+{
+    std::vector<Tang_Name_Alias_Synonym> synonyms;
 };
 
 struct Tang_Name_Function_Synonym

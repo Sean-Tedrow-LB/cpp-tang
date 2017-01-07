@@ -11,10 +11,13 @@ source_files = [
     "tang_modules.cpp",
     "windows_error.cpp",
     "tang_block_template.cpp",
-    "tang_compilation.cpp",
     "tang_name.cpp",
     "tang_output.cpp",
-    "tang_async_pass.cpp"
+    "tang_async_pass.cpp",
+    "tang_character_map.cpp",
+    "tang_number.cpp",
+    "tang_statementify.cpp",
+    "tang_partify.cpp"
 ]
 
 

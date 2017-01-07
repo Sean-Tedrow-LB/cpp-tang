@@ -16,6 +16,7 @@ Tang_Name::~Tang_Name()
         break;
     case TANG_NAME_CLASS:
     case TANG_NAME_FORM:
+    case TANG_NAME_UNION:
         delete structure_data();
         break;
     case TANG_NAME_ALIAS:

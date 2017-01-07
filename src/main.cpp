@@ -9,7 +9,7 @@
 #include "tang_file_writer.hpp"
 #include "tang_modules.hpp"
 #include "tang_output.hpp"
-#include "tang_compilation.hpp"
+#include "tang_async_pass.hpp"
 
 
 
@@ -63,7 +63,8 @@ int main(int argc, char **argv)
         const std::string &in_path = arg_parser.in_paths[i];
         module_tracker.load_module_from_working_dir(in_path);
     }
-    tang_compile(module_tracker);
+    tang_async_pass(module_tracker);
+    // TODO: sync pass
     Tang_File_Writer writer;
     if(!writer.open(arg_parser.out_path))
     {
