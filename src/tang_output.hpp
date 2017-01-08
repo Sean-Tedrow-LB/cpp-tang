@@ -8,5 +8,7 @@ void output_text_without_comments(const Tang_Module_Tracker &module_tracker,
                                   Tang_File_Writer &writer);
 void output_blocks_and_statements(const Tang_Module_Tracker &module_tracker,
                                   Tang_File_Writer &writer);
+void output_parts(const Tang_Module_Tracker &module_tracker,
+                  Tang_File_Writer &writer);
 
 #endif

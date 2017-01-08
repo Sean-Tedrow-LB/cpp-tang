@@ -222,7 +222,6 @@ Tang_Module_Tracker::load_module_from_node(const std::string &path,
 
 bool Tang_Module_Tracker::initialize()
 {
-    std::string lib_path;
     bool lib_path_found = env_to_string("TANG_LIBRARY_PATH", lib_path);
     if(!lib_path_found)
     {

@@ -128,11 +128,14 @@ int write_units_character(char first_unit, const char *units,
     }
     else
     {
-        part_out->value_string += first_unit;
         int j = MEASURE_CHAR(first_unit);
-        for(int i = 1; i < j; i++)
+        std::string &v_str = part_out->value_string;
+        int old_length = (int)v_str.length();
+        v_str.resize(old_length + j);
+        char *s = &(v_str[old_length]);
+        for(int i = 0; i < j; i++)
         {
-            part_out->value_string += units[i];
+            s[i] = units[i];
         }
         return j;
     }

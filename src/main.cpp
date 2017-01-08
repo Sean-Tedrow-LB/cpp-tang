@@ -46,13 +46,16 @@ int wmain(int argc, wchar_t **argvw)
 int main(int argc, char **argv)
 {
 #endif
-    // TODO: check for --help or -h
     Tang_Argument_Parser arg_parser;
     if(!arg_parser.parse(argc, GET_ARGV))
     {
         return -1;
     }
-    
+    if(arg_parser.help_requested)
+    {
+        print_help();
+        return 0;
+    }
     Tang_Module_Tracker module_tracker;
     if(!module_tracker.initialize())
     {
@@ -78,11 +81,15 @@ int main(int argc, char **argv)
     case TANG_MODE_BLOCKS_AND_STATEMENTS:
         output_blocks_and_statements(module_tracker, writer);
         break;
+    case TANG_MODE_PARTS:
+        output_parts(module_tracker, writer);
+        break;
     default:
         std::cout << "In this early alpha version of the compiler, "
                      "the output mode must be set to " 
-                     TANG_FLAG_MODE_TEXT_WITHOUT_COMMENTS " or "
-                     TANG_FLAG_MODE_BLOCKS_AND_STATEMENTS << std::endl;
+                     TANG_FLAG_MODE_TEXT_WITHOUT_COMMENTS ", "
+                     TANG_FLAG_MODE_BLOCKS_AND_STATEMENTS ", or "
+                     TANG_FLAG_MODE_PARTS << std::endl;
     }
     return 0;
 }

@@ -3,6 +3,7 @@
 
 #include "ix_unicode.hpp"
 #include <string>
+#include <map>
 
 enum Tang_Part_Type
 {

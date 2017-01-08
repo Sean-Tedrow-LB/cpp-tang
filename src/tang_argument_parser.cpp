@@ -130,6 +130,9 @@ struct Tang_Mode_Parser
 
 bool Tang_Argument_Parser::parse(int argc, char **argv)
 {
+    // TODO: need to keep track of include paths differently.
+    //       --includes may be interspersed with --lib-includes,
+    //       and they need to be pasted in the right order.
     Tang_Binary_Parser binary_parser;
     binary_parser.add_flag(TANG_FLAG_OUT, set_out);
     binary_parser.add_flag(TANG_FLAG_IN, set_in);
@@ -142,6 +145,8 @@ bool Tang_Argument_Parser::parse(int argc, char **argv)
                          TANG_MODE_TEXT_WITHOUT_COMMENTS);
     mode_parser.add_flag(TANG_FLAG_MODE_BLOCKS_AND_STATEMENTS, 
                          TANG_MODE_BLOCKS_AND_STATEMENTS);
+    mode_parser.add_flag(TANG_FLAG_MODE_PARTS,
+                         TANG_MODE_PARTS);
     mode_parser.add_flag(TANG_FLAG_MODE_AFTER_ASYNC, 
                          TANG_MODE_AFTER_ASYNC);
     mode_parser.add_flag(TANG_FLAG_MODE_AFTER_SYNC, 
@@ -164,15 +169,84 @@ bool Tang_Argument_Parser::parse(int argc, char **argv)
         {
             if(!mode_parser.search_for_flags(flag, *this))
             {
-                std::cout << "Unrecognized flag: " << flag << std::endl;
-                successful = false;
+                if(!strcmp(flag, "-h") || !strcmp(flag, "--help"))
+                {
+                    help_requested = true;
+                }
+                else
+                {
+                    std::cout << "Unrecognized flag: " << flag << std::endl;
+                    successful = false;
+                }
             }
         }
     }
-    if(out_path.empty())
+    if(out_path.empty() && !help_requested)
     {
         std::cout << "Output path not provided" << std::endl;
         successful = false;
     }
     return successful;
 }
+
+
+void print_help()
+{
+    // TODO: refine help output.  Need to prevent words from being split.
+    //       Also should probably use defines.
+    std::cout << "tangc translates Tang source code into C99." << std::endl;
+    std::cout << std::endl;
+    std::cout << "File paths vs module paths:" << std::endl;
+    std::cout << "The exact format of a file path varies from "
+                 "operating system to operating system." << std::endl;
+    std::cout << "The format of a module path, however, is consistent "
+                 "across operating systems, and takes the form of "
+                 "directory names followed by a module name, each "
+                 "delimited by a forward slash (/).  Further, the "
+                 "file extension \".tang\" does not need to be written "
+                 "in the module path, it will be added automatically." <<
+                 std::endl;
+    std::cout << "Example: for the Windows file path "
+                 "\"src\\engine\\core.tang\", the equivalent module path "
+                 "would be \"src/engine/core\"." << std::endl;
+    std::cout << std::endl;
+    std::cout << "Libraries:" << std::endl;
+    std::cout << "The library directory can be specified via the "
+                 "environment variable \"TANG_LIBRARY_PATH\".  "
+                 "The library directory defaults to \"/usr/tang-libraries\" "
+                 "on unix-like systems, or "
+                 "\"C:\\Program Files\\Tang\\tang-libraries\" on Windows "
+                 "if the environment variable is not provided." << std::endl;
+    std::cout << std::endl;
+    std::cout << "tangc takes the following arguments:" << std::endl;
+    std::cout << "--out [file path]: the file where tangc "
+                 "will put its output.  One invocation of tangc must yield "
+                 "exactly one output file." << std::endl;
+    std::cout << "--in [module path]: an input file for this invocation of "
+                 "tangc.  You may provide any number of these." << std::endl;
+    std::cout << "--include [file path]: the file will be literally pasted "
+                 "into the beginning of the output file.  You may provide "
+                 "any number of these.  Files provided via "
+                 "this flag will be pasted into the output file in the order "
+                 "they were given." << std::endl;
+    std::cout << "--lib-include [file path]: same as --include, but the "
+                 "provided file path will be appended to the library path."
+                 << std::endl;
+    std::cout << "--meta-flag [flag name]: the named meta flag will be "
+                 "considered true during compilation." << std::endl;
+    std::cout << std::endl;
+    std::cout << "tangc can be set to one of the following output modes.  "
+                 "These are mostly for debug purposes.  Each one provides " 
+                 "insight into how one step of the compilation process "
+                 "is being performed." << std::endl;
+    std::cout << "--text-without-comments" << std::endl;
+    std::cout << "--blocks-and-statements" << std::endl;
+    std::cout << "--parts" << std::endl;
+    std::cout << "--after-async" << std::endl;
+    std::cout << "--after-sync" << std::endl;
+    std::cout << "If none of these flags are provided, tangc will default "
+                 "to outputting C99." << std::endl;
+}
+
+
+

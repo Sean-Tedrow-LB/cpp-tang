@@ -31,6 +31,7 @@ struct Tang_Module_Node
 struct Tang_Module_Tracker
 {
     Tang_Module_Node root;
+    std::string lib_path; // file path to library directory
     // on windows, the library directory might be on a separate drive.
     #ifdef _WIN32
     Tang_Module_Node library_root;
