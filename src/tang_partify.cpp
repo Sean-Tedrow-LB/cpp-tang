@@ -128,16 +128,8 @@ int write_units_character(char first_unit, const char *units,
     }
     else
     {
-        int j = MEASURE_CHAR(first_unit);
-        std::string &v_str = part_out->value_string;
-        int old_length = (int)v_str.length();
-        v_str.resize(old_length + j);
-        char *s = &(v_str[old_length]);
-        for(int i = 0; i < j; i++)
-        {
-            s[i] = units[i];
-        }
-        return j;
+        int len = ix_read_character(units, length_left, part_out->code_point);
+        return len;
     }
 }
 
@@ -315,6 +307,7 @@ static void partify_statement(Tang_Block_Template_Child &child,
                     child.is_erroneous = true;
                     return;
                 }
+                part->punctuation = p;
             }
             break;
         case TANG_PART_ENCLOSER:
