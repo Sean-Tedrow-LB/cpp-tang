@@ -55,7 +55,6 @@ enum Tang_Part_Type
 #define TANG_PS_ADDASSIGN   "+="
 #define TANG_PS_SUBASSIGN   "-="
 #define TANG_PS_QM          "?"
-#define TANG_PS_COLON       ":"
 
 
 enum Tang_Part_Punctuation
@@ -99,7 +98,6 @@ enum Tang_Part_Punctuation
     TANG_P_ADDASSIGN,
     TANG_P_SUBASSIGN,
     TANG_P_QM,
-    TANG_P_COLON,
     TANG_P_UNRECOGNIZED
 };
 

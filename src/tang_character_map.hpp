@@ -22,7 +22,9 @@ struct Tang_Character_Compendium
                          part_type_map,
                          hex_map;
     
-    std::map<std::string, Tang_Part_Punctuation> punctuation_type_map;
+    std::map<std::string, Tang_Part_Punctuation> punc_map_3,
+                                                 punc_map_2,
+                                                 punc_map_1;
     
     Tang_Character_Compendium();
     
@@ -32,7 +34,8 @@ struct Tang_Character_Compendium
     TANG_CHARACTER_MAP_GETTER(punctuation)
     TANG_CHARACTER_MAP_GETTER(part_type)
     
-    Tang_Part_Punctuation lookup_punctuation_type(const std::string &str) const;
+    Tang_Part_Punctuation lookup_punctuation_type(const std::string &str,
+                                                  int &length_out) const;
 };
 
 #endif

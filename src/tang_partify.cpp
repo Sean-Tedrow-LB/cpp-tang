@@ -297,17 +297,31 @@ static void partify_statement(Tang_Block_Template_Child &child,
                     c = s[i];
                 }
                 while(compendium.lookup_punctuation(c));
-                Tang_Part_Punctuation 
-                p = compendium.lookup_punctuation_type(punc_string);
-                if(p == TANG_P_UNRECOGNIZED)
+                int p_i = 0;
+                while(true)
                 {
-                    std::cout << "Found an unrecognized punctuation mark \"" << 
-                                 punc_string << "\" on line " << 
-                                 line_number << std::endl;
-                    child.is_erroneous = true;
-                    return;
+                    int p_len = 0;
+                    Tang_Part_Punctuation 
+                    p = compendium.lookup_punctuation_type(punc_string, p_len);
+                    if(p == TANG_P_UNRECOGNIZED)
+                    {
+                        std::cout << "Found an unrecognized punctuation mark \"" << 
+                                     punc_string << "\" on line " << 
+                                     line_number << std::endl;
+                        child.is_erroneous = true;
+                        return;
+                    }
+                    part->punctuation = p;
+                    p_i += p_len;
+                    if(p_i >= (int)punc_string.length())
+                    {
+                        break;
+                    }
+                    punc_string.erase(0, p_len);
+                    part = child.new_part();
+                    part->type = TANG_PART_PUNCTUATION;
+                    part->line_number = line_number;
                 }
-                part->punctuation = p;
             }
             break;
         case TANG_PART_ENCLOSER:
@@ -324,7 +338,7 @@ static void partify_statement(Tang_Block_Template_Child &child,
                 tang_unit_as_hex(c, hex);
                 std::cout << "Found a part that is of an unknown type on "
                              "line " << line_number << " that starts with "
-                             "the UTF-8 unit " << hex[0] << hex[1] << std::endl;
+                             "the UTF-8 unit 0x" << hex[0] << hex[1] << std::endl;
                 child.is_erroneous = true;
             }
             return;

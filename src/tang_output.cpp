@@ -129,7 +129,6 @@ static void setup_punctuation_map(Tang_Punctuation_Map &map)
     ADD_TO_PUNC_MAP(map, ADDASSIGN);
     ADD_TO_PUNC_MAP(map, SUBASSIGN);
     ADD_TO_PUNC_MAP(map, QM);
-    ADD_TO_PUNC_MAP(map, COLON);
 }
 
 static void output_block_parts(std::string &statement, 
@@ -189,7 +188,7 @@ static void output_block_parts(std::string &statement,
                                      map[part.punctuation] + ")";
                         break;
                     case TANG_PART_ENCLOSER:
-                        statement += " character(";
+                        statement += " encloser(";
                         output_code_point(statement, part.code_point);
                         statement += ")";
                         break;

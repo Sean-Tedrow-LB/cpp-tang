@@ -46,7 +46,11 @@
     ( \
       ((c >= 0x30) && (c < 0x3A)) ? (char)TANG_PART_NUMBER : \
       ( \
-        TANG_WORD_FUNCTION(c) ? (char)TANG_PART_WORD : \
+        ( \
+            ((c > 0x40) && (c < 0x5B)) || \
+            ((c > 0x60) && (c < 0x7B)) || \
+            (c == '_') \
+        ) ? (char)TANG_PART_WORD : \
         ( \
           (c == '\'') ? (char)TANG_PART_CHARACTER : \
           ( \
@@ -77,59 +81,86 @@ Tang_Character_Compendium::Tang_Character_Compendium()
     TANG_SET_UP_CHARACTER_MAP(punctuation_map, TANG_PUNCTUATION_FUNCTION)
     TANG_SET_UP_CHARACTER_MAP(part_type_map, TANG_PART_TYPE_FUNCTION)
     
+    ADD_TO_MAP(punc_map_1, ASSIGN)
+    ADD_TO_MAP(punc_map_1, ACCESS)
+    ADD_TO_MAP(punc_map_1, COMMA)
+    ADD_TO_MAP(punc_map_1, NOT)
+    ADD_TO_MAP(punc_map_1, BAND)
+    ADD_TO_MAP(punc_map_1, BOR)
+    ADD_TO_MAP(punc_map_1, BXOR)
+    ADD_TO_MAP(punc_map_1, MOD)
+    ADD_TO_MAP(punc_map_1, MULT)
+    ADD_TO_MAP(punc_map_1, DIV)
+    ADD_TO_MAP(punc_map_1, ADD)
+    ADD_TO_MAP(punc_map_1, SUB)
+    ADD_TO_MAP(punc_map_1, QM)
+    ADD_TO_MAP(punc_map_1, GT)
+    ADD_TO_MAP(punc_map_1, LT)
     
-    ADD_TO_MAP(punctuation_type_map, ASSIGN)
-    ADD_TO_MAP(punctuation_type_map, DASSIGN)
-    ADD_TO_MAP(punctuation_type_map, POINT)
-    ADD_TO_MAP(punctuation_type_map, DPOINT)
-    ADD_TO_MAP(punctuation_type_map, ADDRESS)
-    ADD_TO_MAP(punctuation_type_map, ACCESS)
-    ADD_TO_MAP(punctuation_type_map, GACCESS)
-    ADD_TO_MAP(punctuation_type_map, DO)
-    ADD_TO_MAP(punctuation_type_map, COMMA)
-    ADD_TO_MAP(punctuation_type_map, EQ)
-    ADD_TO_MAP(punctuation_type_map, NEQ)
-    ADD_TO_MAP(punctuation_type_map, GT)
-    ADD_TO_MAP(punctuation_type_map, LT)
-    ADD_TO_MAP(punctuation_type_map, GTEQ)
-    ADD_TO_MAP(punctuation_type_map, LTEQ)
-    ADD_TO_MAP(punctuation_type_map, NOT)
-    ADD_TO_MAP(punctuation_type_map, LAND)
-    ADD_TO_MAP(punctuation_type_map, LOR)
-    ADD_TO_MAP(punctuation_type_map, BAND)
-    ADD_TO_MAP(punctuation_type_map, BOR)
-    ADD_TO_MAP(punctuation_type_map, BXOR)
-    ADD_TO_MAP(punctuation_type_map, SHR)
-    ADD_TO_MAP(punctuation_type_map, SHL)
-    ADD_TO_MAP(punctuation_type_map, MOD)
-    ADD_TO_MAP(punctuation_type_map, MULT)
-    ADD_TO_MAP(punctuation_type_map, DIV)
-    ADD_TO_MAP(punctuation_type_map, ADD)
-    ADD_TO_MAP(punctuation_type_map, SUB)
-    ADD_TO_MAP(punctuation_type_map, BANDASSIGN)
-    ADD_TO_MAP(punctuation_type_map, BORASSIGN)
-    ADD_TO_MAP(punctuation_type_map, BXORASSIGN)
-    ADD_TO_MAP(punctuation_type_map, SHRASSIGN)
-    ADD_TO_MAP(punctuation_type_map, SHLASSIGN)
-    ADD_TO_MAP(punctuation_type_map, MODASSIGN)
-    ADD_TO_MAP(punctuation_type_map, MULTASSIGN)
-    ADD_TO_MAP(punctuation_type_map, DIVASSIGN)
-    ADD_TO_MAP(punctuation_type_map, ADDASSIGN)
-    ADD_TO_MAP(punctuation_type_map, SUBASSIGN)
-    ADD_TO_MAP(punctuation_type_map, QM)
-    ADD_TO_MAP(punctuation_type_map, COLON)
+    ADD_TO_MAP(punc_map_2, DASSIGN)
+    ADD_TO_MAP(punc_map_2, POINT)
+    ADD_TO_MAP(punc_map_2, DPOINT)
+    ADD_TO_MAP(punc_map_2, ADDRESS)
+    ADD_TO_MAP(punc_map_2, GACCESS)
+    ADD_TO_MAP(punc_map_2, DO)
+    ADD_TO_MAP(punc_map_2, EQ)
+    ADD_TO_MAP(punc_map_2, NEQ)
+    ADD_TO_MAP(punc_map_2, GTEQ)
+    ADD_TO_MAP(punc_map_2, LTEQ)
+    ADD_TO_MAP(punc_map_2, LAND)
+    ADD_TO_MAP(punc_map_2, LOR)
+    ADD_TO_MAP(punc_map_2, SHR)
+    ADD_TO_MAP(punc_map_2, SHL)
+    ADD_TO_MAP(punc_map_2, BANDASSIGN)
+    ADD_TO_MAP(punc_map_2, BORASSIGN)
+    ADD_TO_MAP(punc_map_2, BXORASSIGN)
+    ADD_TO_MAP(punc_map_2, MODASSIGN)
+    ADD_TO_MAP(punc_map_2, MULTASSIGN)
+    ADD_TO_MAP(punc_map_2, DIVASSIGN)
+    ADD_TO_MAP(punc_map_2, ADDASSIGN)
+    ADD_TO_MAP(punc_map_2, SUBASSIGN)
+    
+    ADD_TO_MAP(punc_map_3, SHRASSIGN)
+    ADD_TO_MAP(punc_map_3, SHLASSIGN)
 }
 
 Tang_Part_Punctuation 
-Tang_Character_Compendium::lookup_punctuation_type(const std::string &str) const
+Tang_Character_Compendium::lookup_punctuation_type(const std::string &str,
+                                                   int &length_out) const
 {
-    auto p = punctuation_type_map.find(str);
-    if(p == punctuation_type_map.end())
+    std::string s;
+    s.resize(3);
+    if((int)str.length() >= 1)
     {
-        return TANG_P_UNRECOGNIZED;
+        s[0] = str[0];
+        if((int)str.length() >= 2)
+        {
+            s[1] = str[1];
+            if((int)str.length() >= 3)
+            {
+                s[2] = str[2];
+                auto p = punc_map_3.find(s);
+                if(p != punc_map_3.end())
+                {
+                    length_out = 3;
+                    return p->second;
+                }
+            }
+            s.resize(2);
+            auto p = punc_map_2.find(s);
+            if(p != punc_map_2.end())
+            {
+                length_out = 2;
+                return p->second;
+            }
+        }
+        s.resize(1);
+        auto p = punc_map_1.find(s);
+        if(p != punc_map_1.end())
+        {
+            length_out = 1;
+            return p->second;
+        }
     }
-    else
-    {
-        return p->second;
-    }
+    return TANG_P_UNRECOGNIZED;
 }
